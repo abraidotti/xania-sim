@@ -70,9 +70,10 @@ def main() -> None:
     d = sub.add_parser("dispatch", help="build the dispatch website locally")
     d.add_argument("--out", default="build/dispatch")
     sub.add_parser("publish", help="build the dispatch, push it to the dispatch branch and deploy it to GitHub Pages")
-    from . import play
+    from . import play, stage
 
     play.add_commands(sub)
+    stage.add_command(sub)
     args = ap.parse_args()
     if args.cmd == "smoke":
         asyncio.run(smoke(args.port, args.existing))
@@ -112,6 +113,8 @@ def main() -> None:
         companions_main(args.roster, args.hours)
     elif args.cmd == "chronicle":
         chronicle_cmd(args.bot, args.days)
+    elif args.cmd == "stage":
+        asyncio.run(stage.stage_cmd(args))
 
 
 def _progress(lore):
