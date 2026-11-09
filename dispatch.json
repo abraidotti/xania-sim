@@ -1,6 +1,72 @@
 {
- "generated": 1794201193.502101,
+ "generated": 1794247982.0236747,
  "findings": [
+  {
+   "signature": "crash:asan-heap-use-after-free:Descriptor.hpp:Descriptor::is_switched",
+   "kind": "crash",
+   "title": "xania crashed (AddressSanitizer: heap-use-after-free) in Descriptor::is_switched (Descriptor.hpp)",
+   "severity": "high",
+   "summary": "Access: Descriptor::is_switched (Descriptor.hpp:163) <- Char::get_trust (Char.cpp:118) <- Char::is_immortal (Char.cpp:113) <- char_update (update.cpp:705) <- update_handler (update.cpp:882) <- MudImpl::game_loop (MudImpl.cpp:332)\nFreed by: DescriptorList::reap_closed (DescriptorList.cpp:8) <- MudImpl::game_loop (MudImpl.cpp:327) <- main (main.cpp:23)\nAllocated by: DescriptorList::create (DescriptorList.cpp:18) <- MudImpl::handle_doorman_packet (MudImpl.cpp:487) <- MudImpl::game_loop (MudImpl.cpp:291) <- main (main.cpp:23)",
+   "repro": "python -m pytest \"scenarios/test_live_smoke.py::test_character_is_saved_and_logs_back_in\" (intermittent: 1 in 3 full runs)",
+   "first_seen": 1794247815.8641362,
+   "last_seen": 1794247815.8641362,
+   "count": 1,
+   "first_commit": "",
+   "last_commit": "",
+   "status": "new",
+   "link": "",
+   "id": "e76fdffa75",
+   "occurrences": [
+    {
+     "run": "20261109-130746-tests",
+     "at": 1794247815.8641362,
+     "commit": "",
+     "evidence": {
+      "backtrace": "==92809==ERROR: AddressSanitizer: heap-use-after-free on address 0x7d2ff5d39668 at pc 0x555557254a14 bp 0x7fffffffc990 sp 0x7fffffffc980\nREAD of size 8 at 0x7d2ff5d39668 thread T0\n    #0 0x555557254a13 in Descriptor::is_switched() const ~/xania/src/Descriptor.hpp:163\n    #1 0x5555576b924f in Char::get_trust() const ~/xania/src/Char.cpp:118\n    #2 0x5555576b9093 in Char::is_immortal() const ~/xania/src/Char.cpp:113\n    #3 0x5555576322cd in char_update() ~/xania/src/update.cpp:705\n    #4 0x555557636eab in update_handler(Mud&) ~/xania/src/update.cpp:882\n    #5 0x5555570218e3 in MudImpl::game_loop() ~/xania/src/MudImpl.cpp:332\n    #6 0x555556fd2630 in main ~/xania/src/main.cpp:23\n    #7 0x7ffff682a600 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:59\n    #8 0x7ffff682a717 in __libc_start_main_impl ../csu/libc-start.c:360\n    #9 0x555556fd1984 in _start (~/xania/install/bin/xania+0x1a7d984) (BuildId: dc389066e01e5035d647bf865b807777d961d23d)\n\n0x7d2ff5d39668 is located 360 bytes inside of 376-byte region [0x7d2ff5d39500,0x7d2ff5d39678)\nfreed by thread T0 here:\n    #0 0x7ffff792d89f in operator delete(void*, unsigned long) ../../../../src/libsanitizer/asan/asan_new_delete.cpp:190\n    #1 0x5555570768d9 in std::__new_allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >::deallocate(std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*, unsigned long) /usr/include/c++/15/bits/new_allocator.h:172\n    #2 0x55555706cb76 in std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >::deallocate(std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*, unsigned long) /usr/include/c++/15/bits/allocator.h:215\n    #3 0x55555706cb76 in std::allocator_traits<std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> > >::deallocate(std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >&, std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*, unsigned long) /usr/include/c++/15/bits/alloc_traits.h:649\n    #4 0x55555706cb76 in std::__detail::_Hashtable_alloc<std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> > >::_M_deallocate_node_ptr(std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*) /usr/include/c++/15/bits/hashtable_policy.h:1583\n    #5 0x555557066380 in std::__detail::_Hashtable_alloc<std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> > >::_M_deallocate_node(std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*) /usr/include/c++/15/bits/hashtable_policy.h:1573\n    #6 0x5555577aa63c in std::_Hashtable<unsigned int, std::pair<unsigned int const, Descriptor>, std::allocator<std::pair<unsigned int const, Descriptor> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_erase(unsigned long, std::__detail::_Hash_node_base*, std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*) /usr/include/c++/15/bits/hashtable.h:2590\n    #7 0x5555577a87d9 in std::_Hashtable<unsigned int, std::pair<unsigned int const, Descriptor>, std::allocator<std::pair<unsigned int const, Descriptor> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::erase(std::__detail::_Node_const_iterator<std::pair<unsigned int const, Descriptor>, false, false>) /usr/include/c++/15/bits/hashtable.h:2565\n    #8 0x5555577a8062 in std::_Hashtable<unsigned int, std::pair<unsigned int const, Descriptor>, std::allocator<std::pair<unsigned int const, Descriptor> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::erase(std::__detail::_Node_iterator<std::pair<unsigned int const, Descriptor>, false, false>) /usr/include/c++/15/bits/hashtable.h:1158\n    #9 0x5555577a7b3b in std::unordered_map<unsigned int, Descriptor, std::hash<unsigned int>, std::equal_to<unsigned int>, std::allocator<std::pair<unsigned int const, Descriptor> > >::erase(std::__detail::_Node_iterator<std::pair<unsigned int const, Descriptor>, false, false>) /usr/include/c++/15/bits/unordered_map.h:817\n    #10 0x5555577a7120 in DescriptorList::reap_closed() ~/xania/src/DescriptorList.cpp:8\n    #11 0x555557021881 in MudImpl::game_loop() ~/xania/src/MudImpl.cpp:327\n    #12 0x555556fd2630 in main ~/xania/src/main.cpp:23\n    #13 0x7ffff682a600 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:59\n    #14 0x7ffff682a717 in __libc_start_main_impl ../csu/libc-start.c:360\n    #15 0x555556fd1984 in _start (~/xania/install/bin/xania+0x1a7d984) (BuildId: dc389066e01e5035d647bf865b807777d961d23d)\n\npreviously allocated by thread T0 here:\n    #0 0x7ffff792c73f in operator new(unsigned long) ../../../../src/libsanitizer/asan/asan_new_delete.cpp:109\n    #1 0x5555577aef8f in std::__new_allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >::allocate(unsigned long, void const*) /usr/include/c++/15/bits/new_allocator.h:151\n    #2 0x5555577aadd3 in std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >::allocate(unsigned long) /usr/include/c++/15/bits/allocator.h:203\n    #3 0x5555577aadd3 in std::allocator_traits<std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> > >::allocate(std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >&, unsigned long) /usr/include/c++/15/bits/alloc_traits.h:614\n    #4 0x5555577aadd3 in std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>* std::__detail::_Hashtable_alloc<std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> > >::_M_allocate_node<std::piecewise_construct_t const&, std::tuple<unsigned int&>, std::tuple<unsigned int&, Mud&> >(std::piecewise_construct_t const&, std::tuple<unsigned int&>&&, std::tuple<unsigned int&, Mud&>&&) /usr/include/c++/15/bits/hashtable_policy.h:1551\n    #5 0x5555577a8c7e in std::pair<std::__detail::_Node_iterator<std::pair<unsigned int const, Descriptor>, false, false>, bool> std::_Hashtable<unsigned int, std::pair<unsigned int const, Descriptor>, std::allocator<std::pair<unsigned int const, Descriptor> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_emplace_uniq<std::piecewise_construct_t const&, std::tuple<unsigned int&>, std::tuple<unsigned int&, Mud&> >(std::piecewise_construct_t const&, std::tuple<unsigned int&>&&, std::tuple<unsigned int&, Mud&>&&) /usr/include/c++/15/bits/hashtable.h:2346\n    #6 0x5555577a832a in std::pair<std::__detail::_Node_iterator<std::pair<unsigned int const, Descriptor>, false, false>, bool> std::_Hashtable<unsigned int, std::pair<unsigned int const, Descriptor>, std::allocator<std::pair<unsigned int const, Descriptor> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::emplace<std::piecewise_construct_t const&, std::tuple<unsigned int&>, std::tuple<unsigned int&, Mud&> >(std::piecewise_construct_t const&, std::tuple<unsigned int&>&&, std::tuple<unsigned int&, Mud&>&&) /usr/include/c++/15/bits/hashtable.h:1029\n    #7 0x5555577a7e86 in std::pair<std::__detail::_Node_iterator<std::pair<unsigned int const, Descriptor>, false, false>, bool> std::unordered_map<unsigned int, Descriptor, std::hash<unsigned int>, std::equal_to<unsigned int>, std::allocator<std::pair<unsigned int const, Descriptor> > >::emplace<std::piecewise_construct_t const&, std::tuple<unsigned int&>, std::tuple<unsigned int&, Mud&> >(std::piecewise_construct_t const&, std::tuple<unsigned int&>&&, std::tuple<unsigned int&, Mud&>&&) /usr/include/c++/15/bits/unordered_map.h:442\n    #8 0x5555577a748d in DescriptorList::create(unsigned int, Mud&) ~/xania/src/DescriptorList.cpp:18\n    #9 0x55555702800a in MudImpl::handle_doorman_packet(tagPacket const&, std::basic_string_view<char, std::char_traits<char> >) ~/xania/src/MudImpl.cpp:487\n    #10 0x555557020798 in MudImpl::game_loop() ~/xania/src/MudImpl.cpp:291\n    #11 0x555556fd2630 in main ~/xania/src/main.cpp:23\n    #12 0x7ffff682a600 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:59\n    #13 0x7ffff682a717 in __libc_start_main_impl ../csu/libc-start.c:360\n    #14 0x555556fd1984 in _start (~/xania/install/bin/xania+0x1a7d984) (BuildId: dc389066e01e5035d647bf865b807777d961d23d)\n\nSUMMARY: AddressSanitizer: heap-use-after-free ~/xania/src/Descriptor.hpp:163 in Descriptor::is_switched() const\n",
+      "frames": [
+       {
+        "func": "Descriptor::is_switched",
+        "file": "Descriptor.hpp",
+        "line": 163
+       },
+       {
+        "func": "Char::get_trust",
+        "file": "Char.cpp",
+        "line": 118
+       },
+       {
+        "func": "Char::is_immortal",
+        "file": "Char.cpp",
+        "line": 113
+       },
+       {
+        "func": "char_update",
+        "file": "update.cpp",
+        "line": 705
+       },
+       {
+        "func": "update_handler",
+        "file": "update.cpp",
+        "line": 882
+       },
+       {
+        "func": "MudImpl::game_loop",
+        "file": "MudImpl.cpp",
+        "line": 332
+       },
+       {
+        "func": "main",
+        "file": "main.cpp",
+        "line": 23
+       }
+      ],
+      "context": "During the live scenario test_character_is_saved_and_logs_back_in, after many bots created characters and quit. Likely mechanism (from reading the source, unconfirmed): Descriptor::close() clears character_->desc only when the descriptor is Playing or Disconnecting (Descriptor.cpp:235), so a character whose link closes in another state keeps a dangling desc that char_update reads on the next tick.",
+      "transcripts": {},
+      "title": "xania crashed (AddressSanitizer: heap-use-after-free) in Descriptor::is_switched (Descriptor.hpp)"
+     }
+    }
+   ]
+  },
   {
    "signature": "crash:SIGABRT:act_obj.cpp:do_get",
    "kind": "crash",
@@ -9,14 +75,158 @@
    "summary": "/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view<_CharT, _Traits>::value_type& std::basic_string_view<_CharT, _Traits>::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits<char>; const_reference = const char&; size_type = long unsigned int]: Assertion '__pos < this->_M_len' failed.\n\nCall chain: do_get (act_obj.cpp:648) <- operator() (InterpreterImpl.cpp:405) <- Interpreter::Impl::interpret (InterpreterImpl.cpp:549) <- Interpreter::interpret (InterpreterImpl.cpp:569) <- MudImpl::game_loop (MudImpl.cpp:318) <- main (main.cpp:23)",
    "repro": "python -m pytest scenarios/test_live_bugs.py -k get_all",
    "first_seen": 1794200747.4477344,
-   "last_seen": 1794201093.1955407,
-   "count": 2,
+   "last_seen": 1794247666.3706818,
+   "count": 5,
    "first_commit": "82171fa4434933217c5995dc45ae730c4c635928",
    "last_commit": "82171fa4434933217c5995dc45ae730c4c635928",
    "status": "new",
    "link": "https://github.com/abraidotti/xania/issues/1",
    "id": "c0d39d4416",
    "occurrences": [
+    {
+     "run": "20261109-130746-tests",
+     "at": 1794247666.3706818,
+     "commit": "82171fa4434933217c5995dc45ae730c4c635928",
+     "evidence": {
+      "backtrace": "2026-11-09 18:01:09Z :: Incoming connection on channel 0.\n2026-11-09 18:01:11Z :: Simbota@localh*** [#249896952128253326] new player.\n2026-11-09 18:01:13Z :: Simbota has quit.\n2026-11-09 18:01:13Z :: Closing link to channel 0.\n2026-11-09 18:01:14Z :: Incoming connection on channel 0.\n2026-11-09 18:01:15Z :: Simbotb@localh*** [#249896952128253326] new player.\n/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view<_CharT, _Traits>::value_type& std::basic_string_view<_CharT, _Traits>::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits<char>; const_reference = const char&; size_type = long unsigned int]: Assertion '__pos < this->_M_len' failed.\n\nProgram received signal SIGABRT, Aborted.\n__pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44\nwarning: 44\t./nptl/pthread_kill.c: No such file or directory\n\n=== xania-sim: backtrace ===\n#0  __pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44\n#1  __pthread_kill_internal (threadid=<optimized out>, signo=6) at ./nptl/pthread_kill.c:89\n#2  __GI___pthread_kill (threadid=<optimized out>, signo=signo@entry=6) at ./nptl/pthread_kill.c:100\n#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26\n#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77\n#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6\n#6  0x00005555570563fd in std::basic_string_view<char, std::char_traits<char> >::operator[] (this=0x7bfff4bf3a20, __pos=3) at /usr/include/c++/15/string_view:260\n#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648\n#8  0x0000555557816342 in std::__invoke_impl<void, void (*&)(Char*, ArgParser), Char*, ArgParser> (__f=@0x7c2ff5da8760: 0x555557930031 <do_get(Char*, ArgParser)>) at /usr/include/c++/15/bits/invoke.h:63\n#9  0x0000555557812d81 in std::__invoke_r<void, void (*&)(Char*, ArgParser), Char*, ArgParser> (__fn=@0x7c2ff5da8760: 0x555557930031 <do_get(Char*, ArgParser)>) at /usr/include/c++/15/bits/invoke.h:113\n#10 0x000055555780edac in std::_Function_handler<void(Char*, ArgParser), void (*)(Char*, ArgParser)>::_M_invoke (__functor=..., __args#0=@0x7bfff4769a20: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292\n#11 0x000055555780c413 in std::function<void(Char*, ArgParser)>::operator() (this=0x7c2ff5da8760, __args#0=0x0, __args#1=...) at /usr/include/c++/15/bits/std_function.h:593\n#12 0x00005555577fd20e in operator() (__closure=0x7c2ff5da8760, ch=0x7d5ff5e23680, args=\"all\") at ~/xania/src/InterpreterImpl.cpp:405\n#13 0x0000555557806c40 in std::__invoke_impl<void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::<lambda(Char*, std::string_view)>&, Char*, std::basic_string_view<char, std::char_traits<char> > >(std::__invoke_other, struct {...} &) (__f=...) at /usr/include/c++/15/bits/invoke.h:63\n#14 0x000055555780637d in std::__invoke_r<void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::<lambda(Char*, std::string_view)>&, Char*, std::basic_string_view<char, std::char_traits<char> > >(struct {...} &) (__fn=...) at /usr/include/c++/15/bits/invoke.h:113\n#15 0x00005555578057e5 in std::_Function_handler<void(Char*, std::basic_string_view<char, std::char_traits<char> >), Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::<lambda(Char*, std::string_view)> >::_M_invoke(const std::_Any_data &, Char *&&, std::basic_string_view<char, std::char_traits<char> > &&) (__functor=..., __args#0=@0x7bfff48cda20: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292\n#16 0x000055555780d75e in std::function<void(Char*, std::basic_string_view<char, std::char_traits<char> >)>::operator() (this=0x7bfff4bf3420, __args#0=0xffffffffffffffff, __args#1=\"SHOCKI\") at /usr/include/c++/15/bits/std_function.h:593\n#17 0x0000555557803d6a in Interpreter::Impl::interpret (this=0x7c5ff5be0020, ch=0x7d5ff5e23680, argument=\"get all\") at ~/xania/src/InterpreterImpl.cpp:549\n#18 0x000055555780486f in Interpreter::interpret (this=0x7d7ff5be0270, ch=0x7d5ff5e23680, argument=\"get all\") at ~/xania/src/InterpreterImpl.cpp:569\n#19 0x00005555570213ca in MudImpl::game_loop (this=0x7d7ff5be0080) at ~/xania/src/MudImpl.cpp:318\n#20 0x0000555556fd2631 in main () at ~/xania/src/main.cpp:23\n\n=== locals ===\n#0  __pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44\n        tid = <optimized out>\n        ret = 0\n        pd = <optimized out>\n        old_mask = {__val = {17042406631168}}\n        ret = <optimized out>\n#1  __pthread_kill_internal (threadid=<optimized out>, signo=6) at ./nptl/pthread_kill.c:89\nNo locals.\n#2  __GI___pthread_kill (threadid=<optimized out>, signo=signo@entry=6) at ./nptl/pthread_kill.c:100\nNo locals.\n#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26\n        ret = <optimized out>\n#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77\n        act = {__sigaction_handler = {sa_handler = 0x104, sa_sigaction = 0x104}, sa_mask = {__val = {93825031387840, 136339253050592, 140737488338736, 140737488338768, 140737347006847, 140737488338720, 136339253050112, 137988538489024, 136339253050112, 140737353248768, 0, 32768, 140737347055821, 140737488338848, 140737347038132, 136339253050120}}, sa_flags = 4096, sa_restorer = 0x7bfff4bf3ce0}\n#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6\nNo symbol table info available.\n#6  0x00005555570563fd in std::basic_string_view<char, std::char_traits<char> >::operator[] (this=0x7bfff4bf3a20, __pos=3) at /usr/include/c++/15/string_view:260\n        __PRETTY_FUNCTION__ = \"constexpr const std::basic_string_view<_CharT, _Traits>::value_type& std::basic_string_view<_CharT, _Traits>::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits<char>; const_r\"...\n#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648\n        container = 0x7ffff682a601 <__libc_start_call_main+129>\n        found = false\n        arg1 = \"all\"\n        arg2 = \"\"",
+      "frames": [
+       {
+        "func": "do_get",
+        "file": "act_obj.cpp",
+        "line": 648
+       },
+       {
+        "func": "operator()",
+        "file": "InterpreterImpl.cpp",
+        "line": 405
+       },
+       {
+        "func": "Interpreter::Impl::interpret",
+        "file": "InterpreterImpl.cpp",
+        "line": 549
+       },
+       {
+        "func": "Interpreter::interpret",
+        "file": "InterpreterImpl.cpp",
+        "line": 569
+       },
+       {
+        "func": "MudImpl::game_loop",
+        "file": "MudImpl.cpp",
+        "line": 318
+       },
+       {
+        "func": "main",
+        "file": "main.cpp",
+        "line": 23
+       },
+       {
+        "func": "do_get",
+        "file": "act_obj.cpp",
+        "line": 648
+       }
+      ],
+      "context": "A bot typed 'get all' in an empty room (a known-bug check).",
+      "transcripts": {},
+      "title": "xania crashed (SIGABRT, failed assertion) in do_get (act_obj.cpp)"
+     }
+    },
+    {
+     "run": "20261109-114832-tests",
+     "at": 1794242912.3931124,
+     "commit": "82171fa4434933217c5995dc45ae730c4c635928",
+     "evidence": {
+      "backtrace": "2026-11-09 16:39:11Z :: Incoming connection on channel 0.\n2026-11-09 16:39:13Z :: Simbota@localh*** [#249896952128253326] new player.\n2026-11-09 16:39:16Z :: Simbota has quit.\n2026-11-09 16:39:16Z :: Closing link to channel 0.\n2026-11-09 16:39:16Z :: Incoming connection on channel 0.\n2026-11-09 16:39:18Z :: Simbotb@localh*** [#249896952128253326] new player.\n/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view<_CharT, _Traits>::value_type& std::basic_string_view<_CharT, _Traits>::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits<char>; const_reference = const char&; size_type = long unsigned int]: Assertion '__pos < this->_M_len' failed.\n\nProgram received signal SIGABRT, Aborted.\n__pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44\nwarning: 44\t./nptl/pthread_kill.c: No such file or directory\n\n=== xania-sim: backtrace ===\n#0  __pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44\n#1  __pthread_kill_internal (threadid=<optimized out>, signo=6) at ./nptl/pthread_kill.c:89\n#2  __GI___pthread_kill (threadid=<optimized out>, signo=signo@entry=6) at ./nptl/pthread_kill.c:100\n#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26\n#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77\n#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6\n#6  0x00005555570563fd in std::basic_string_view<char, std::char_traits<char> >::operator[] (this=0x7bfff4bf4220, __pos=3) at /usr/include/c++/15/string_view:260\n#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648\n#8  0x0000555557816342 in std::__invoke_impl<void, void (*&)(Char*, ArgParser), Char*, ArgParser> (__f=@0x7c2ff5da7d40: 0x555557930031 <do_get(Char*, ArgParser)>) at /usr/include/c++/15/bits/invoke.h:63\n#9  0x0000555557812d81 in std::__invoke_r<void, void (*&)(Char*, ArgParser), Char*, ArgParser> (__fn=@0x7c2ff5da7d40: 0x555557930031 <do_get(Char*, ArgParser)>) at /usr/include/c++/15/bits/invoke.h:113\n#10 0x000055555780edac in std::_Function_handler<void(Char*, ArgParser), void (*)(Char*, ArgParser)>::_M_invoke (__functor=..., __args#0=@0x7bfff4773fe0: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292\n#11 0x000055555780c413 in std::function<void(Char*, ArgParser)>::operator() (this=0x7c2ff5da7d40, __args#0=0x0, __args#1=...) at /usr/include/c++/15/bits/std_function.h:593\n#12 0x00005555577fd20e in operator() (__closure=0x7c2ff5da7d40, ch=0x7d5ff5e23680, args=\"all\") at ~/xania/src/InterpreterImpl.cpp:405\n#13 0x0000555557806c40 in std::__invoke_impl<void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::<lambda(Char*, std::string_view)>&, Char*, std::basic_string_view<char, std::char_traits<char> > >(std::__invoke_other, struct {...} &) (__f=...) at /usr/include/c++/15/bits/invoke.h:63\n#14 0x000055555780637d in std::__invoke_r<void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::<lambda(Char*, std::string_view)>&, Char*, std::basic_string_view<char, std::char_traits<char> > >(struct {...} &) (__fn=...) at /usr/include/c++/15/bits/invoke.h:113\n#15 0x00005555578057e5 in std::_Function_handler<void(Char*, std::basic_string_view<char, std::char_traits<char> >), Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::<lambda(Char*, std::string_view)> >::_M_invoke(const std::_Any_data &, Char *&&, std::basic_string_view<char, std::char_traits<char> > &&) (__functor=..., __args#0=@0x7bfff480dc20: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292\n#16 0x000055555780d75e in std::function<void(Char*, std::basic_string_view<char, std::char_traits<char> >)>::operator() (this=0x7bfff4bf3c20, __args#0=0xffffffffffffffff, __args#1=\"SHOCKI\") at /usr/include/c++/15/bits/std_function.h:593\n#17 0x0000555557803d6a in Interpreter::Impl::interpret (this=0x7c5ff5be0020, ch=0x7d5ff5e23680, argument=\"get all\") at ~/xania/src/InterpreterImpl.cpp:549\n#18 0x000055555780486f in Interpreter::interpret (this=0x7d7ff5be0270, ch=0x7d5ff5e23680, argument=\"get all\") at ~/xania/src/InterpreterImpl.cpp:569\n#19 0x00005555570213ca in MudImpl::game_loop (this=0x7d7ff5be0080) at ~/xania/src/MudImpl.cpp:318\n#20 0x0000555556fd2631 in main () at ~/xania/src/main.cpp:23\n\n=== locals ===\n#0  __pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44\n        tid = <optimized out>\n        ret = 0\n        pd = <optimized out>\n        old_mask = {__val = {17042406631424}}\n        ret = <optimized out>\n#1  __pthread_kill_internal (threadid=<optimized out>, signo=6) at ./nptl/pthread_kill.c:89\nNo locals.\n#2  __GI___pthread_kill (threadid=<optimized out>, signo=signo@entry=6) at ./nptl/pthread_kill.c:100\nNo locals.\n#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26\n        ret = <optimized out>\n#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77\n        act = {__sigaction_handler = {sa_handler = 0x104, sa_sigaction = 0x104}, sa_mask = {__val = {93825031387840, 136339253052640, 140737488338736, 140737488338768, 140737347006847, 140737488338720, 136339253052160, 137988538489024, 136339253052160, 140737353248768, 0, 32768, 140737347055821, 140737488338848, 140737347038132, 136339253052168}}, sa_flags = 4096, sa_restorer = 0x7bfff4bf44e0}\n#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6\nNo symbol table info available.\n#6  0x00005555570563fd in std::basic_string_view<char, std::char_traits<char> >::operator[] (this=0x7bfff4bf4220, __pos=3) at /usr/include/c++/15/string_view:260\n        __PRETTY_FUNCTION__ = \"constexpr const std::basic_string_view<_CharT, _Traits>::value_type& std::basic_string_view<_CharT, _Traits>::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits<char>; const_r\"...\n#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648\n        container = 0x7ffff682a601 <__libc_start_call_main+129>\n        found = false\n        arg1 = \"all\"\n        arg2 = \"\"",
+      "frames": [
+       {
+        "func": "do_get",
+        "file": "act_obj.cpp",
+        "line": 648
+       },
+       {
+        "func": "operator()",
+        "file": "InterpreterImpl.cpp",
+        "line": 405
+       },
+       {
+        "func": "Interpreter::Impl::interpret",
+        "file": "InterpreterImpl.cpp",
+        "line": 549
+       },
+       {
+        "func": "Interpreter::interpret",
+        "file": "InterpreterImpl.cpp",
+        "line": 569
+       },
+       {
+        "func": "MudImpl::game_loop",
+        "file": "MudImpl.cpp",
+        "line": 318
+       },
+       {
+        "func": "main",
+        "file": "main.cpp",
+        "line": 23
+       },
+       {
+        "func": "do_get",
+        "file": "act_obj.cpp",
+        "line": 648
+       }
+      ],
+      "context": "A bot typed 'get all' in an empty room (a known-bug check).",
+      "transcripts": {},
+      "title": "xania crashed (SIGABRT, failed assertion) in do_get (act_obj.cpp)"
+     }
+    },
+    {
+     "run": "20261109-104036-tests",
+     "at": 1794238836.0420659,
+     "commit": "82171fa4434933217c5995dc45ae730c4c635928",
+     "evidence": {
+      "backtrace": "2026-11-09 15:36:52Z :: Incoming connection on channel 0.\n2026-11-09 15:36:54Z :: Simbota@localh*** [#249896952128253326] new player.\n2026-11-09 15:36:56Z :: Simbota has quit.\n2026-11-09 15:36:56Z :: Closing link to channel 0.\n2026-11-09 15:36:57Z :: Incoming connection on channel 0.\n2026-11-09 15:36:58Z :: Simbotb@localh*** [#249896952128253326] new player.\n/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view<_CharT, _Traits>::value_type& std::basic_string_view<_CharT, _Traits>::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits<char>; const_reference = const char&; size_type = long unsigned int]: Assertion '__pos < this->_M_len' failed.\n\nProgram received signal SIGABRT, Aborted.\n__pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44\nwarning: 44\t./nptl/pthread_kill.c: No such file or directory\n\n=== xania-sim: backtrace ===\n#0  __pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44\n#1  __pthread_kill_internal (threadid=<optimized out>, signo=6) at ./nptl/pthread_kill.c:89\n#2  __GI___pthread_kill (threadid=<optimized out>, signo=signo@entry=6) at ./nptl/pthread_kill.c:100\n#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26\n#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77\n#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6\n#6  0x00005555570563fd in std::basic_string_view<char, std::char_traits<char> >::operator[] (this=0x7bfff4bf3220, __pos=3) at /usr/include/c++/15/string_view:260\n#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648\n#8  0x0000555557816342 in std::__invoke_impl<void, void (*&)(Char*, ArgParser), Char*, ArgParser> (__f=@0x7c2ff5da7aa0: 0x555557930031 <do_get(Char*, ArgParser)>) at /usr/include/c++/15/bits/invoke.h:63\n#9  0x0000555557812d81 in std::__invoke_r<void, void (*&)(Char*, ArgParser), Char*, ArgParser> (__fn=@0x7c2ff5da7aa0: 0x555557930031 <do_get(Char*, ArgParser)>) at /usr/include/c++/15/bits/invoke.h:113\n#10 0x000055555780edac in std::_Function_handler<void(Char*, ArgParser), void (*)(Char*, ArgParser)>::_M_invoke (__functor=..., __args#0=@0x7bfff4789320: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292\n#11 0x000055555780c413 in std::function<void(Char*, ArgParser)>::operator() (this=0x7c2ff5da7aa0, __args#0=0x0, __args#1=...) at /usr/include/c++/15/bits/std_function.h:593\n#12 0x00005555577fd20e in operator() (__closure=0x7c2ff5da7aa0, ch=0x7d5ff5e23680, args=\"all\") at ~/xania/src/InterpreterImpl.cpp:405\n#13 0x0000555557806c40 in std::__invoke_impl<void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::<lambda(Char*, std::string_view)>&, Char*, std::basic_string_view<char, std::char_traits<char> > >(std::__invoke_other, struct {...} &) (__f=...) at /usr/include/c++/15/bits/invoke.h:63\n#14 0x000055555780637d in std::__invoke_r<void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::<lambda(Char*, std::string_view)>&, Char*, std::basic_string_view<char, std::char_traits<char> > >(struct {...} &) (__fn=...) at /usr/include/c++/15/bits/invoke.h:113\n#15 0x00005555578057e5 in std::_Function_handler<void(Char*, std::basic_string_view<char, std::char_traits<char> >), Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::<lambda(Char*, std::string_view)> >::_M_invoke(const std::_Any_data &, Char *&&, std::basic_string_view<char, std::char_traits<char> > &&) (__functor=..., __args#0=@0x7bfff4812320: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292\n#16 0x000055555780d75e in std::function<void(Char*, std::basic_string_view<char, std::char_traits<char> >)>::operator() (this=0x7bfff4bf2c20, __args#0=0xffffffffffffffff, __args#1=\"SHOCKI\") at /usr/include/c++/15/bits/std_function.h:593\n#17 0x0000555557803d6a in Interpreter::Impl::interpret (this=0x7c5ff5be0020, ch=0x7d5ff5e23680, argument=\"get all\") at ~/xania/src/InterpreterImpl.cpp:549\n#18 0x000055555780486f in Interpreter::interpret (this=0x7d7ff5be0270, ch=0x7d5ff5e23680, argument=\"get all\") at ~/xania/src/InterpreterImpl.cpp:569\n#19 0x00005555570213ca in MudImpl::game_loop (this=0x7d7ff5be0080) at ~/xania/src/MudImpl.cpp:318\n#20 0x0000555556fd2631 in main () at ~/xania/src/main.cpp:23\n\n=== locals ===\n#0  __pthread_kill_implementation (threadid=<optimized out>, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44\n        tid = <optimized out>\n        ret = 0\n        pd = <optimized out>\n        old_mask = {__val = {17042406630912}}\n        ret = <optimized out>\n#1  __pthread_kill_internal (threadid=<optimized out>, signo=6) at ./nptl/pthread_kill.c:89\nNo locals.\n#2  __GI___pthread_kill (threadid=<optimized out>, signo=signo@entry=6) at ./nptl/pthread_kill.c:100\nNo locals.\n#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26\n        ret = <optimized out>\n#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77\n        act = {__sigaction_handler = {sa_handler = 0x104, sa_sigaction = 0x104}, sa_mask = {__val = {93825031387840, 136339253048544, 140737488338736, 140737488338768, 140737347006847, 140737488338720, 136339253048064, 137988538489024, 136339253048064, 140737353248768, 0, 32768, 140737347055821, 140737488338848, 140737347038132, 136339253048072}}, sa_flags = 4096, sa_restorer = 0x7bfff4bf34e0}\n#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6\nNo symbol table info available.\n#6  0x00005555570563fd in std::basic_string_view<char, std::char_traits<char> >::operator[] (this=0x7bfff4bf3220, __pos=3) at /usr/include/c++/15/string_view:260\n        __PRETTY_FUNCTION__ = \"constexpr const std::basic_string_view<_CharT, _Traits>::value_type& std::basic_string_view<_CharT, _Traits>::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits<char>; const_r\"...\n#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648\n        container = 0x7ffff682a601 <__libc_start_call_main+129>\n        found = false\n        arg1 = \"all\"\n        arg2 = \"\"",
+      "frames": [
+       {
+        "func": "do_get",
+        "file": "act_obj.cpp",
+        "line": 648
+       },
+       {
+        "func": "operator()",
+        "file": "InterpreterImpl.cpp",
+        "line": 405
+       },
+       {
+        "func": "Interpreter::Impl::interpret",
+        "file": "InterpreterImpl.cpp",
+        "line": 549
+       },
+       {
+        "func": "Interpreter::interpret",
+        "file": "InterpreterImpl.cpp",
+        "line": 569
+       },
+       {
+        "func": "MudImpl::game_loop",
+        "file": "MudImpl.cpp",
+        "line": 318
+       },
+       {
+        "func": "main",
+        "file": "main.cpp",
+        "line": 23
+       },
+       {
+        "func": "do_get",
+        "file": "act_obj.cpp",
+        "line": 648
+       }
+      ],
+      "context": "A bot typed 'get all' in an empty room (a known-bug check).",
+      "transcripts": {},
+      "title": "xania crashed (SIGABRT, failed assertion) in do_get (act_obj.cpp)"
+     }
+    },
     {
      "run": "20261109-001133-hunt",
      "at": 1794201093.1955407,
@@ -137,9 +347,93 @@
      }
     }
    ]
+  },
+  {
+   "signature": "crash:unknown signal:6a6b6a21",
+   "kind": "crash",
+   "title": "xania crashed (unknown signal) in unknown code",
+   "severity": "high",
+   "summary": "Call chain:",
+   "repro": "python -m pytest \"scenarios/test_live_smoke.py::test_character_is_saved_and_logs_back_in\"",
+   "first_seen": 1794247666.3721228,
+   "last_seen": 1794247666.3721228,
+   "count": 1,
+   "first_commit": "82171fa4434933217c5995dc45ae730c4c635928",
+   "last_commit": "82171fa4434933217c5995dc45ae730c4c635928",
+   "status": "ignored",
+   "link": "",
+   "id": "362daae043",
+   "occurrences": [
+    {
+     "run": "20261109-130746-tests",
+     "at": 1794247666.3721228,
+     "commit": "82171fa4434933217c5995dc45ae730c4c635928",
+     "evidence": {
+      "backtrace": "  Poisoned by user:        f7\n  Container overflow:      fc\n  Array cookie:            ac\n  Intra object redzone:    bb\n  ASan internal:           fe\n  Left alloca redzone:     ca\n  Right alloca redzone:    cb\n==92809==ABORTING\n[Inferior 1 (process 92809) exited with code 01]\n\n=== xania-sim: backtrace ===\nNo stack.\n\n=== locals ===\nNo stack.",
+      "frames": [],
+      "context": "During the live scenario test_character_is_saved_and_logs_back_in.",
+      "transcripts": {
+       "Simbotq": "13:07:01 < <20/20hp 100/100m 100mv 0cd> \n13:07:01 > scroll 0\n13:07:01 > prompt <bot %h/%H %m/%M %v/%V %X %g %c>%n\n13:07:01 < Paging at maximum.\n13:07:01 < \n13:07:01 < <20/20hp 100/100m 100mv 0cd> \n13:07:01 < Ok - prompt set.\n13:07:01 < \n13:07:01 < <bot 20/20 100/100 100/100 1000 0 0>\n13:07:01 < \n13:07:01 > autoloot\n13:07:02 < Autolooting removed.\n13:07:02 < \n13:07:02 < <bot 20/20 100/100 100/100 1000 0 0>\n13:07:02 < \n13:07:02 > north\n13:07:02 < A Room in Mud School\n13:07:02 < \n13:07:02 <   You are in a room in Mud School.  Paintings of the heroic graduates of mud\n13:07:02 < school adorn the walls. To the west is Furey's Training Room, and to the east\n13:07:02 < is Seth's Guild Room.  North of you is the next Station of Mud School.\n13:07:02 < There is a sign on the wall (type 'LOOK SIGN' to read it).\n13:07:02 < \n13:07:02 < [Exits: north east south west]\n13:07:02 < \n13:07:02 < <bot 20/20 100/100 99/100 1000 0 1>\n13:07:02 < \n13:07:02 > quit\n13:07:02 < You quit reality for the game.\n13:07:02 < ",
+       "Simbotp": "13:06:57 < \n13:06:57 < <20/20hp 100/100m 100mv 0cd> \n13:06:57 < Ok - prompt set.\n13:06:57 < \n13:06:57 < <bot 20/20 100/100 100/100 1000 0 0>\n13:06:57 < \n13:06:57 > autoloot\n13:06:57 < Autolooting removed.\n13:06:57 < \n13:06:57 < <bot 20/20 100/100 100/100 1000 0 0>\n13:06:57 < \n13:06:57 > look\n13:06:57 < Entrance to Mud School\n13:06:57 < \n13:06:57 <   This is the entrance to the Merc Mud School.  Go north to go through mud\n13:06:57 < school.  If you have been here before and want to go directly to the arena,\n13:06:57 < go south.\n13:06:57 < \n13:06:57 < A sign warns 'You may not pass these doors once you have passed level 5.'\n13:06:57 < \n13:06:57 < If you get lost you can return to Mud School using 'recall' or its\n13:06:57 < shortcut '/'.  That takes you to Temple Square, then go up!\n13:06:57 < \n13:06:57 < [Exits: north south down]\n13:06:57 < \n13:06:57 < <bot 20/20 100/100 100/100 1000 0 0>\n13:06:57 < \n13:06:57 > quit\n13:06:58 < You quit reality for the game.\n13:06:58 < "
+      },
+      "title": "xania crashed (unknown signal) in unknown code"
+     }
+    }
+   ]
   }
  ],
  "runs": [
+  {
+   "id": "20261109-130746-tests",
+   "kind": "tests",
+   "title": "Live scenarios",
+   "started": 1794247666.3685586,
+   "ended": 1794247666.3736732,
+   "commit": "82171fa4434933217c5995dc45ae730c4c635928",
+   "dirty": 0,
+   "summary": {
+    "passed": 18,
+    "failed": 2,
+    "findings": 2
+   },
+   "findings": [
+    "crash:SIGABRT:act_obj.cpp:do_get",
+    "crash:unknown signal:6a6b6a21",
+    "crash:asan-heap-use-after-free:Descriptor.hpp:Descriptor::is_switched"
+   ]
+  },
+  {
+   "id": "20261109-114832-tests",
+   "kind": "tests",
+   "title": "Live scenarios",
+   "started": 1794242912.3906977,
+   "ended": 1794242912.394367,
+   "commit": "82171fa4434933217c5995dc45ae730c4c635928",
+   "dirty": 0,
+   "summary": {
+    "passed": 18,
+    "findings": 1
+   },
+   "findings": [
+    "crash:SIGABRT:act_obj.cpp:do_get"
+   ]
+  },
+  {
+   "id": "20261109-104036-tests",
+   "kind": "tests",
+   "title": "Live scenarios",
+   "started": 1794238836.0397193,
+   "ended": 1794238836.0437524,
+   "commit": "82171fa4434933217c5995dc45ae730c4c635928",
+   "dirty": 0,
+   "summary": {
+    "passed": 16,
+    "findings": 1
+   },
+   "findings": [
+    "crash:SIGABRT:act_obj.cpp:do_get"
+   ]
+  },
   {
    "id": "20261109-001133-hunt",
    "kind": "hunt",
@@ -189,6 +483,466 @@
     "findings": 0
    },
    "findings": []
+  }
+ ],
+ "bots": [
+  {
+   "name": "Simboth",
+   "cls": "knight",
+   "race": "human",
+   "created": 1794242427.7118607,
+   "last_seen": 1794247561.521594,
+   "level": 2,
+   "xp": 2122,
+   "gold": 56,
+   "kills": 8,
+   "deaths": 0,
+   "flees": 1,
+   "levels_gained": 2,
+   "hours": 0.17360625565052032
+  },
+  {
+   "name": "Hilda",
+   "cls": "knight",
+   "race": "human",
+   "created": 1794243091.434456,
+   "last_seen": 1794247227.8415124,
+   "level": 3,
+   "xp": 3130,
+   "gold": 142,
+   "kills": 19,
+   "deaths": 0,
+   "flees": 14,
+   "levels_gained": 4,
+   "hours": 1.1490753258599176
+  },
+  {
+   "name": "Wren",
+   "cls": "mage",
+   "race": "human",
+   "created": 1794240324.9221668,
+   "last_seen": 1794242209.9629428,
+   "level": 2,
+   "xp": 2658,
+   "gold": 15,
+   "kills": 9,
+   "deaths": 1,
+   "flees": 8,
+   "levels_gained": 1,
+   "hours": 0.3491075027651257
+  },
+  {
+   "name": "Hildatest",
+   "cls": "knight",
+   "race": "human",
+   "created": 1794240531.661553,
+   "last_seen": 1794241499.0058486,
+   "level": 1,
+   "xp": 1927,
+   "gold": 30,
+   "kills": 8,
+   "deaths": 0,
+   "flees": 0,
+   "levels_gained": 1,
+   "hours": 0.28746786283122167
+  },
+  {
+   "name": "Bramtest",
+   "cls": "cleric",
+   "race": "human",
+   "created": 1794240523.4118142,
+   "last_seen": 1794241453.9896245,
+   "level": 1,
+   "xp": 1567,
+   "gold": 2,
+   "kills": 5,
+   "deaths": 0,
+   "flees": 3,
+   "levels_gained": 0,
+   "hours": 0.28983040948708855
+  },
+  {
+   "name": "Testlvl",
+   "cls": "knight",
+   "race": "human",
+   "created": 1794238942.492542,
+   "last_seen": 1794239216.3313153,
+   "level": 1,
+   "xp": 1828,
+   "gold": 3,
+   "kills": 3,
+   "deaths": 0,
+   "flees": 3,
+   "levels_gained": 0,
+   "hours": 0.07655982620186276
+  },
+  {
+   "name": "Simbotd",
+   "cls": "knight",
+   "race": "human",
+   "created": 1794238662.7479556,
+   "last_seen": 1794238757.7681246,
+   "level": 2,
+   "xp": 2095,
+   "gold": 5,
+   "kills": 4,
+   "deaths": 0,
+   "flees": 1,
+   "levels_gained": 1,
+   "hours": 0.02701735152138604
+  }
+ ],
+ "fights": [
+  {
+   "mob": 3062,
+   "name": "a gutter rat",
+   "cls": "knight",
+   "level": 1,
+   "fights": 22,
+   "won": 1.0,
+   "lost_share": 0.125,
+   "xp": 252.9090909090909,
+   "predicted_lost_share": 0.007438064318830003,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 7003,
+   "name": "the small spider",
+   "cls": "knight",
+   "level": 1,
+   "fights": 8,
+   "won": 1.0,
+   "lost_share": 0.32681451612903223,
+   "xp": 337.875,
+   "predicted_lost_share": 0.014123857667271575,
+   "predicted_xp": 318.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3062,
+   "name": "a gutter rat",
+   "cls": "knight",
+   "level": 2,
+   "fights": 6,
+   "won": 1.0,
+   "lost_share": 0.0,
+   "xp": 140.66666666666666,
+   "predicted_lost_share": 0.004473776821360437,
+   "predicted_xp": 136.5,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3122,
+   "name": "the duckling",
+   "cls": "knight",
+   "level": 1,
+   "fights": 4,
+   "won": 1.0,
+   "lost_share": 0.0,
+   "xp": 252.75,
+   "predicted_lost_share": 0.008145596036071123,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 7003,
+   "name": "the small spider",
+   "cls": "knight",
+   "level": 2,
+   "fights": 4,
+   "won": 1.0,
+   "lost_share": 0.034482758620689655,
+   "xp": 220.5,
+   "predicted_lost_share": 0.0070825797999367595,
+   "predicted_xp": 225.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3062,
+   "name": "a gutter rat",
+   "cls": "mage",
+   "level": 1,
+   "fights": 3,
+   "won": 1.0,
+   "lost_share": 0.18666666666666668,
+   "xp": 244.66666666666666,
+   "predicted_lost_share": 0.04757313428329912,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3121,
+   "name": "the swan",
+   "cls": "knight",
+   "level": 1,
+   "fights": 3,
+   "won": 0.3333333333333333,
+   "lost_share": 0.5145833333333333,
+   "xp": 249.0,
+   "predicted_lost_share": 0.035593500320301945,
+   "predicted_xp": 255.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3713,
+   "name": "a girdle shell snail",
+   "cls": "mage",
+   "level": 1,
+   "fights": 3,
+   "won": 1.0,
+   "lost_share": 0.0,
+   "xp": 258.3333333333333,
+   "predicted_lost_share": 0.00253723382844262,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 6605,
+   "name": "an old doll",
+   "cls": "knight",
+   "level": 2,
+   "fights": 3,
+   "won": 0.3333333333333333,
+   "lost_share": 0.5172413793103449,
+   "xp": 144.0,
+   "predicted_lost_share": 0.038711340712137665,
+   "predicted_xp": 180.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3122,
+   "name": "the duckling",
+   "cls": "cleric",
+   "level": 1,
+   "fights": 2,
+   "won": 1.0,
+   "lost_share": 0.35,
+   "xp": 284.5,
+   "predicted_lost_share": 0.2722878587083769,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3122,
+   "name": "the duckling",
+   "cls": "mage",
+   "level": 1,
+   "fights": 2,
+   "won": 0.5,
+   "lost_share": 0.55,
+   "xp": 250.0,
+   "predicted_lost_share": 0.1529899933919524,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3713,
+   "name": "a girdle shell snail",
+   "cls": "cleric",
+   "level": 1,
+   "fights": 2,
+   "won": 1.0,
+   "lost_share": 0.0,
+   "xp": 272.0,
+   "predicted_lost_share": 0.00380585074266393,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3713,
+   "name": "a girdle shell snail",
+   "cls": "knight",
+   "level": 1,
+   "fights": 2,
+   "won": 1.0,
+   "lost_share": 0.0,
+   "xp": 268.0,
+   "predicted_lost_share": 0.00039669676367093344,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 7001,
+   "name": "the small bat",
+   "cls": "knight",
+   "level": 2,
+   "fights": 2,
+   "won": 1.0,
+   "lost_share": 0.09083191850594227,
+   "xp": 167.0,
+   "predicted_lost_share": 0.008749069164627761,
+   "predicted_xp": 202.5,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3062,
+   "name": "a gutter rat",
+   "cls": "cleric",
+   "level": 1,
+   "fights": 1,
+   "won": 0.0,
+   "lost_share": 0.6,
+   "xp": 0.0,
+   "predicted_lost_share": 0.07135970142494868,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3121,
+   "name": "the swan",
+   "cls": "knight",
+   "level": 2,
+   "fights": 1,
+   "won": 1.0,
+   "lost_share": 0.034482758620689655,
+   "xp": 222.0,
+   "predicted_lost_share": 0.01631939389873895,
+   "predicted_xp": 180.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3123,
+   "name": "the sparrow",
+   "cls": "cleric",
+   "level": 1,
+   "fights": 1,
+   "won": 0.0,
+   "lost_share": 0.35,
+   "xp": 0.0,
+   "predicted_lost_share": 0.10656382079459004,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3123,
+   "name": "the sparrow",
+   "cls": "knight",
+   "level": 1,
+   "fights": 1,
+   "won": 1.0,
+   "lost_share": 0.09375,
+   "xp": 199.0,
+   "predicted_lost_share": 0.01110750938278614,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3123,
+   "name": "the sparrow",
+   "cls": "mage",
+   "level": 1,
+   "fights": 1,
+   "won": 0.0,
+   "lost_share": 0.55,
+   "xp": 0.0,
+   "predicted_lost_share": 0.07104254719639337,
+   "predicted_xp": 216.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3124,
+   "name": "the duck",
+   "cls": "knight",
+   "level": 2,
+   "fights": 1,
+   "won": 1.0,
+   "lost_share": 0.10344827586206896,
+   "xp": 174.0,
+   "predicted_lost_share": 0.008332446823455013,
+   "predicted_xp": 180.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3702,
+   "name": "a grizzly monster",
+   "cls": "mage",
+   "level": 2,
+   "fights": 1,
+   "won": 1.0,
+   "lost_share": 0.36,
+   "xp": 217.0,
+   "predicted_lost_share": 0.02298180059570004,
+   "predicted_xp": 180.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3709,
+   "name": "a grey hare",
+   "cls": "cleric",
+   "level": 1,
+   "fights": 1,
+   "won": 0.0,
+   "lost_share": 0.6,
+   "xp": 0.0,
+   "predicted_lost_share": 0.19223227938871845,
+   "predicted_xp": 255.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3709,
+   "name": "a grey hare",
+   "cls": "mage",
+   "level": 2,
+   "fights": 1,
+   "won": 0.0,
+   "lost_share": 0.64,
+   "xp": 0.0,
+   "predicted_lost_share": 0.06319995163817513,
+   "predicted_xp": 180.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 3713,
+   "name": "a girdle shell snail",
+   "cls": "mage",
+   "level": 2,
+   "fights": 1,
+   "won": 1.0,
+   "lost_share": 0.0,
+   "xp": 169.0,
+   "predicted_lost_share": 0.0012509492188131127,
+   "predicted_xp": 136.5,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 6600,
+   "name": "the dwarven youth",
+   "cls": "knight",
+   "level": 2,
+   "fights": 1,
+   "won": 0.0,
+   "lost_share": 0.41379310344827586,
+   "xp": 0.0,
+   "predicted_lost_share": 0.12326517987361171,
+   "predicted_xp": 249.0,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 6601,
+   "name": "a teddy bear",
+   "cls": "knight",
+   "level": 2,
+   "fights": 1,
+   "won": 1.0,
+   "lost_share": 0.10344827586206896,
+   "xp": 190.0,
+   "predicted_lost_share": 0.01579058111945917,
+   "predicted_xp": 202.5,
+   "predicted_deadly": false
+  },
+  {
+   "mob": 7003,
+   "name": "the small spider",
+   "cls": "mage",
+   "level": 2,
+   "fights": 1,
+   "won": 0.0,
+   "lost_share": 0.6,
+   "xp": 0.0,
+   "predicted_lost_share": 0.04395269363927635,
+   "predicted_xp": 225.0,
+   "predicted_deadly": false
   }
  ]
 }

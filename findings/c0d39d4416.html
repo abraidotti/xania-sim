@@ -29,9 +29,194 @@ th { color: var(--muted); font-weight: 600; }
 .scroll { overflow-x: auto; }
 details { margin: 8px 0; } summary { cursor: pointer; color: var(--muted); }
 footer { margin-top: 48px; color: var(--muted); font-size: 0.85rem; }
-</style></head><body><main><p class='sub'><a href='../index.html'>Xania Sim dispatch</a></p><h1>xania crashed (SIGABRT, failed assertion) in do_get (act_obj.cpp)</h1><div class="card"><h3><a href="../findings/c0d39d4416.html">xania crashed (SIGABRT, failed assertion) in do_get (act_obj.cpp)</a></h3><div class="meta"><span class="badge high">high</span><span class="badge status-new">new</span>seen 2×, first 2026-11-09 00:05, last 2026-11-09 00:11 on <code>82171fa443</code> · <a href="https://github.com/abraidotti/xania/issues/1">issue</a></div><p>/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.</p></div><h2>What happened</h2><pre>/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.
+.chart { width: 100%; height: auto; display: block; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font-size: 11px; }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.chart .dot { fill: var(--accent); stroke: var(--card); stroke-width: 2; }
+.chart .hit { fill: transparent; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.journal p { margin: 4px 0; }
+.narrator { font-weight: 600; margin: 18px 0 4px; }
+.chron { font-style: italic; color: var(--muted); }
+.epithet { color: var(--accent); font-weight: 600; }
+</style></head><body><main><p class='sub'><a href='../index.html'>Xania Sim dispatch</a></p><h1>xania crashed (SIGABRT, failed assertion) in do_get (act_obj.cpp)</h1><div class="card"><h3><a href="../findings/c0d39d4416.html">xania crashed (SIGABRT, failed assertion) in do_get (act_obj.cpp)</a></h3><div class="meta"><span class="badge high">high</span><span class="badge status-new">new</span>seen 5×, first 2026-11-09 00:05, last 2026-11-09 13:07 on <code>82171fa443</code> · <a href="https://github.com/abraidotti/xania/issues/1">issue</a></div><p>/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.</p></div><h2>What happened</h2><pre>/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.
 
-Call chain: do_get (act_obj.cpp:648) &lt;- operator() (InterpreterImpl.cpp:405) &lt;- Interpreter::Impl::interpret (InterpreterImpl.cpp:549) &lt;- Interpreter::interpret (InterpreterImpl.cpp:569) &lt;- MudImpl::game_loop (MudImpl.cpp:318) &lt;- main (main.cpp:23)</pre><h2>Reproduce</h2><pre>python -m pytest scenarios/test_live_bugs.py -k get_all</pre><h2>Occurrences (2)</h2><div class='card'><div class='meta'>2026-11-09 00:11 · run 20261109-001133-hunt · <code>82171fa443</code></div><p>Level-1 bots fighting angry cave beast (room [3713]).</p><p><code>do_get</code> act_obj.cpp:707 ← <code>loot_and_sacrifice_corpse</code> fight.cpp:565 ← <code>damage</code> fight.cpp:813 ← <code>one_hit</code> fight.cpp:535 ← <code>multi_hit</code> fight.cpp:263 ← <code>multi_hit</code> fight.cpp:234</p><details><summary>Backtrace and xania's last log lines</summary><pre>2026-11-09 05:10:52Z :: Incoming connection on channel 3.
+Call chain: do_get (act_obj.cpp:648) &lt;- operator() (InterpreterImpl.cpp:405) &lt;- Interpreter::Impl::interpret (InterpreterImpl.cpp:549) &lt;- Interpreter::interpret (InterpreterImpl.cpp:569) &lt;- MudImpl::game_loop (MudImpl.cpp:318) &lt;- main (main.cpp:23)</pre><h2>Reproduce</h2><pre>python -m pytest scenarios/test_live_bugs.py -k get_all</pre><h2>Occurrences (5)</h2><div class='card'><div class='meta'>2026-11-09 13:07 · run 20261109-130746-tests · <code>82171fa443</code></div><p>A bot typed &#x27;get all&#x27; in an empty room (a known-bug check).</p><p><code>do_get</code> act_obj.cpp:648 ← <code>operator()</code> InterpreterImpl.cpp:405 ← <code>Interpreter::Impl::interpret</code> InterpreterImpl.cpp:549 ← <code>Interpreter::interpret</code> InterpreterImpl.cpp:569 ← <code>MudImpl::game_loop</code> MudImpl.cpp:318 ← <code>main</code> main.cpp:23</p><details><summary>Backtrace and xania's last log lines</summary><pre>2026-11-09 18:01:09Z :: Incoming connection on channel 0.
+2026-11-09 18:01:11Z :: Simbota@localh*** [#249896952128253326] new player.
+2026-11-09 18:01:13Z :: Simbota has quit.
+2026-11-09 18:01:13Z :: Closing link to channel 0.
+2026-11-09 18:01:14Z :: Incoming connection on channel 0.
+2026-11-09 18:01:15Z :: Simbotb@localh*** [#249896952128253326] new player.
+/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.
+
+Program received signal SIGABRT, Aborted.
+__pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+warning: 44	./nptl/pthread_kill.c: No such file or directory
+
+=== xania-sim: backtrace ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4bf3a20, __pos=3) at /usr/include/c++/15/string_view:260
+#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648
+#8  0x0000555557816342 in std::__invoke_impl&lt;void, void (*&amp;)(Char*, ArgParser), Char*, ArgParser&gt; (__f=@0x7c2ff5da8760: 0x555557930031 &lt;do_get(Char*, ArgParser)&gt;) at /usr/include/c++/15/bits/invoke.h:63
+#9  0x0000555557812d81 in std::__invoke_r&lt;void, void (*&amp;)(Char*, ArgParser), Char*, ArgParser&gt; (__fn=@0x7c2ff5da8760: 0x555557930031 &lt;do_get(Char*, ArgParser)&gt;) at /usr/include/c++/15/bits/invoke.h:113
+#10 0x000055555780edac in std::_Function_handler&lt;void(Char*, ArgParser), void (*)(Char*, ArgParser)&gt;::_M_invoke (__functor=..., __args#0=@0x7bfff4769a20: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292
+#11 0x000055555780c413 in std::function&lt;void(Char*, ArgParser)&gt;::operator() (this=0x7c2ff5da8760, __args#0=0x0, __args#1=...) at /usr/include/c++/15/bits/std_function.h:593
+#12 0x00005555577fd20e in operator() (__closure=0x7c2ff5da8760, ch=0x7d5ff5e23680, args=&quot;all&quot;) at ~/xania/src/InterpreterImpl.cpp:405
+#13 0x0000555557806c40 in std::__invoke_impl&lt;void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::&lt;lambda(Char*, std::string_view)&gt;&amp;, Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt; &gt;(std::__invoke_other, struct {...} &amp;) (__f=...) at /usr/include/c++/15/bits/invoke.h:63
+#14 0x000055555780637d in std::__invoke_r&lt;void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::&lt;lambda(Char*, std::string_view)&gt;&amp;, Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt; &gt;(struct {...} &amp;) (__fn=...) at /usr/include/c++/15/bits/invoke.h:113
+#15 0x00005555578057e5 in std::_Function_handler&lt;void(Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;), Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::&lt;lambda(Char*, std::string_view)&gt; &gt;::_M_invoke(const std::_Any_data &amp;, Char *&amp;&amp;, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt; &amp;&amp;) (__functor=..., __args#0=@0x7bfff48cda20: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292
+#16 0x000055555780d75e in std::function&lt;void(Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;)&gt;::operator() (this=0x7bfff4bf3420, __args#0=0xffffffffffffffff, __args#1=&quot;SHOCKI&quot;) at /usr/include/c++/15/bits/std_function.h:593
+#17 0x0000555557803d6a in Interpreter::Impl::interpret (this=0x7c5ff5be0020, ch=0x7d5ff5e23680, argument=&quot;get all&quot;) at ~/xania/src/InterpreterImpl.cpp:549
+#18 0x000055555780486f in Interpreter::interpret (this=0x7d7ff5be0270, ch=0x7d5ff5e23680, argument=&quot;get all&quot;) at ~/xania/src/InterpreterImpl.cpp:569
+#19 0x00005555570213ca in MudImpl::game_loop (this=0x7d7ff5be0080) at ~/xania/src/MudImpl.cpp:318
+#20 0x0000555556fd2631 in main () at ~/xania/src/main.cpp:23
+
+=== locals ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+        tid = &lt;optimized out&gt;
+        ret = 0
+        pd = &lt;optimized out&gt;
+        old_mask = {__val = {17042406631168}}
+        ret = &lt;optimized out&gt;
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+No locals.
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+No locals.
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+        ret = &lt;optimized out&gt;
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+        act = {__sigaction_handler = {sa_handler = 0x104, sa_sigaction = 0x104}, sa_mask = {__val = {93825031387840, 136339253050592, 140737488338736, 140737488338768, 140737347006847, 140737488338720, 136339253050112, 137988538489024, 136339253050112, 140737353248768, 0, 32768, 140737347055821, 140737488338848, 140737347038132, 136339253050120}}, sa_flags = 4096, sa_restorer = 0x7bfff4bf3ce0}
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+No symbol table info available.
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4bf3a20, __pos=3) at /usr/include/c++/15/string_view:260
+        __PRETTY_FUNCTION__ = &quot;constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_r&quot;...
+#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648
+        container = 0x7ffff682a601 &lt;__libc_start_call_main+129&gt;
+        found = false
+        arg1 = &quot;all&quot;
+        arg2 = &quot;&quot;</pre></details></div><div class='card'><div class='meta'>2026-11-09 11:48 · run 20261109-114832-tests · <code>82171fa443</code></div><p>A bot typed &#x27;get all&#x27; in an empty room (a known-bug check).</p><p><code>do_get</code> act_obj.cpp:648 ← <code>operator()</code> InterpreterImpl.cpp:405 ← <code>Interpreter::Impl::interpret</code> InterpreterImpl.cpp:549 ← <code>Interpreter::interpret</code> InterpreterImpl.cpp:569 ← <code>MudImpl::game_loop</code> MudImpl.cpp:318 ← <code>main</code> main.cpp:23</p><details><summary>Backtrace and xania's last log lines</summary><pre>2026-11-09 16:39:11Z :: Incoming connection on channel 0.
+2026-11-09 16:39:13Z :: Simbota@localh*** [#249896952128253326] new player.
+2026-11-09 16:39:16Z :: Simbota has quit.
+2026-11-09 16:39:16Z :: Closing link to channel 0.
+2026-11-09 16:39:16Z :: Incoming connection on channel 0.
+2026-11-09 16:39:18Z :: Simbotb@localh*** [#249896952128253326] new player.
+/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.
+
+Program received signal SIGABRT, Aborted.
+__pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+warning: 44	./nptl/pthread_kill.c: No such file or directory
+
+=== xania-sim: backtrace ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4bf4220, __pos=3) at /usr/include/c++/15/string_view:260
+#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648
+#8  0x0000555557816342 in std::__invoke_impl&lt;void, void (*&amp;)(Char*, ArgParser), Char*, ArgParser&gt; (__f=@0x7c2ff5da7d40: 0x555557930031 &lt;do_get(Char*, ArgParser)&gt;) at /usr/include/c++/15/bits/invoke.h:63
+#9  0x0000555557812d81 in std::__invoke_r&lt;void, void (*&amp;)(Char*, ArgParser), Char*, ArgParser&gt; (__fn=@0x7c2ff5da7d40: 0x555557930031 &lt;do_get(Char*, ArgParser)&gt;) at /usr/include/c++/15/bits/invoke.h:113
+#10 0x000055555780edac in std::_Function_handler&lt;void(Char*, ArgParser), void (*)(Char*, ArgParser)&gt;::_M_invoke (__functor=..., __args#0=@0x7bfff4773fe0: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292
+#11 0x000055555780c413 in std::function&lt;void(Char*, ArgParser)&gt;::operator() (this=0x7c2ff5da7d40, __args#0=0x0, __args#1=...) at /usr/include/c++/15/bits/std_function.h:593
+#12 0x00005555577fd20e in operator() (__closure=0x7c2ff5da7d40, ch=0x7d5ff5e23680, args=&quot;all&quot;) at ~/xania/src/InterpreterImpl.cpp:405
+#13 0x0000555557806c40 in std::__invoke_impl&lt;void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::&lt;lambda(Char*, std::string_view)&gt;&amp;, Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt; &gt;(std::__invoke_other, struct {...} &amp;) (__f=...) at /usr/include/c++/15/bits/invoke.h:63
+#14 0x000055555780637d in std::__invoke_r&lt;void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::&lt;lambda(Char*, std::string_view)&gt;&amp;, Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt; &gt;(struct {...} &amp;) (__fn=...) at /usr/include/c++/15/bits/invoke.h:113
+#15 0x00005555578057e5 in std::_Function_handler&lt;void(Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;), Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::&lt;lambda(Char*, std::string_view)&gt; &gt;::_M_invoke(const std::_Any_data &amp;, Char *&amp;&amp;, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt; &amp;&amp;) (__functor=..., __args#0=@0x7bfff480dc20: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292
+#16 0x000055555780d75e in std::function&lt;void(Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;)&gt;::operator() (this=0x7bfff4bf3c20, __args#0=0xffffffffffffffff, __args#1=&quot;SHOCKI&quot;) at /usr/include/c++/15/bits/std_function.h:593
+#17 0x0000555557803d6a in Interpreter::Impl::interpret (this=0x7c5ff5be0020, ch=0x7d5ff5e23680, argument=&quot;get all&quot;) at ~/xania/src/InterpreterImpl.cpp:549
+#18 0x000055555780486f in Interpreter::interpret (this=0x7d7ff5be0270, ch=0x7d5ff5e23680, argument=&quot;get all&quot;) at ~/xania/src/InterpreterImpl.cpp:569
+#19 0x00005555570213ca in MudImpl::game_loop (this=0x7d7ff5be0080) at ~/xania/src/MudImpl.cpp:318
+#20 0x0000555556fd2631 in main () at ~/xania/src/main.cpp:23
+
+=== locals ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+        tid = &lt;optimized out&gt;
+        ret = 0
+        pd = &lt;optimized out&gt;
+        old_mask = {__val = {17042406631424}}
+        ret = &lt;optimized out&gt;
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+No locals.
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+No locals.
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+        ret = &lt;optimized out&gt;
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+        act = {__sigaction_handler = {sa_handler = 0x104, sa_sigaction = 0x104}, sa_mask = {__val = {93825031387840, 136339253052640, 140737488338736, 140737488338768, 140737347006847, 140737488338720, 136339253052160, 137988538489024, 136339253052160, 140737353248768, 0, 32768, 140737347055821, 140737488338848, 140737347038132, 136339253052168}}, sa_flags = 4096, sa_restorer = 0x7bfff4bf44e0}
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+No symbol table info available.
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4bf4220, __pos=3) at /usr/include/c++/15/string_view:260
+        __PRETTY_FUNCTION__ = &quot;constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_r&quot;...
+#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648
+        container = 0x7ffff682a601 &lt;__libc_start_call_main+129&gt;
+        found = false
+        arg1 = &quot;all&quot;
+        arg2 = &quot;&quot;</pre></details></div><div class='card'><div class='meta'>2026-11-09 10:40 · run 20261109-104036-tests · <code>82171fa443</code></div><p>A bot typed &#x27;get all&#x27; in an empty room (a known-bug check).</p><p><code>do_get</code> act_obj.cpp:648 ← <code>operator()</code> InterpreterImpl.cpp:405 ← <code>Interpreter::Impl::interpret</code> InterpreterImpl.cpp:549 ← <code>Interpreter::interpret</code> InterpreterImpl.cpp:569 ← <code>MudImpl::game_loop</code> MudImpl.cpp:318 ← <code>main</code> main.cpp:23</p><details><summary>Backtrace and xania's last log lines</summary><pre>2026-11-09 15:36:52Z :: Incoming connection on channel 0.
+2026-11-09 15:36:54Z :: Simbota@localh*** [#249896952128253326] new player.
+2026-11-09 15:36:56Z :: Simbota has quit.
+2026-11-09 15:36:56Z :: Closing link to channel 0.
+2026-11-09 15:36:57Z :: Incoming connection on channel 0.
+2026-11-09 15:36:58Z :: Simbotb@localh*** [#249896952128253326] new player.
+/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.
+
+Program received signal SIGABRT, Aborted.
+__pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+warning: 44	./nptl/pthread_kill.c: No such file or directory
+
+=== xania-sim: backtrace ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4bf3220, __pos=3) at /usr/include/c++/15/string_view:260
+#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648
+#8  0x0000555557816342 in std::__invoke_impl&lt;void, void (*&amp;)(Char*, ArgParser), Char*, ArgParser&gt; (__f=@0x7c2ff5da7aa0: 0x555557930031 &lt;do_get(Char*, ArgParser)&gt;) at /usr/include/c++/15/bits/invoke.h:63
+#9  0x0000555557812d81 in std::__invoke_r&lt;void, void (*&amp;)(Char*, ArgParser), Char*, ArgParser&gt; (__fn=@0x7c2ff5da7aa0: 0x555557930031 &lt;do_get(Char*, ArgParser)&gt;) at /usr/include/c++/15/bits/invoke.h:113
+#10 0x000055555780edac in std::_Function_handler&lt;void(Char*, ArgParser), void (*)(Char*, ArgParser)&gt;::_M_invoke (__functor=..., __args#0=@0x7bfff4789320: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292
+#11 0x000055555780c413 in std::function&lt;void(Char*, ArgParser)&gt;::operator() (this=0x7c2ff5da7aa0, __args#0=0x0, __args#1=...) at /usr/include/c++/15/bits/std_function.h:593
+#12 0x00005555577fd20e in operator() (__closure=0x7c2ff5da7aa0, ch=0x7d5ff5e23680, args=&quot;all&quot;) at ~/xania/src/InterpreterImpl.cpp:405
+#13 0x0000555557806c40 in std::__invoke_impl&lt;void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::&lt;lambda(Char*, std::string_view)&gt;&amp;, Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt; &gt;(std::__invoke_other, struct {...} &amp;) (__f=...) at /usr/include/c++/15/bits/invoke.h:63
+#14 0x000055555780637d in std::__invoke_r&lt;void, Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::&lt;lambda(Char*, std::string_view)&gt;&amp;, Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt; &gt;(struct {...} &amp;) (__fn=...) at /usr/include/c++/15/bits/invoke.h:113
+#15 0x00005555578057e5 in std::_Function_handler&lt;void(Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;), Interpreter::Impl::add_command(char const*, CommandFuncArgParser, Position::Type, sh_int, CommandLogLevel, bool)::&lt;lambda(Char*, std::string_view)&gt; &gt;::_M_invoke(const std::_Any_data &amp;, Char *&amp;&amp;, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt; &amp;&amp;) (__functor=..., __args#0=@0x7bfff4812320: 0x7d5ff5e23680, __args#1=...) at /usr/include/c++/15/bits/std_function.h:292
+#16 0x000055555780d75e in std::function&lt;void(Char*, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;)&gt;::operator() (this=0x7bfff4bf2c20, __args#0=0xffffffffffffffff, __args#1=&quot;SHOCKI&quot;) at /usr/include/c++/15/bits/std_function.h:593
+#17 0x0000555557803d6a in Interpreter::Impl::interpret (this=0x7c5ff5be0020, ch=0x7d5ff5e23680, argument=&quot;get all&quot;) at ~/xania/src/InterpreterImpl.cpp:549
+#18 0x000055555780486f in Interpreter::interpret (this=0x7d7ff5be0270, ch=0x7d5ff5e23680, argument=&quot;get all&quot;) at ~/xania/src/InterpreterImpl.cpp:569
+#19 0x00005555570213ca in MudImpl::game_loop (this=0x7d7ff5be0080) at ~/xania/src/MudImpl.cpp:318
+#20 0x0000555556fd2631 in main () at ~/xania/src/main.cpp:23
+
+=== locals ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+        tid = &lt;optimized out&gt;
+        ret = 0
+        pd = &lt;optimized out&gt;
+        old_mask = {__val = {17042406630912}}
+        ret = &lt;optimized out&gt;
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+No locals.
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+No locals.
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+        ret = &lt;optimized out&gt;
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+        act = {__sigaction_handler = {sa_handler = 0x104, sa_sigaction = 0x104}, sa_mask = {__val = {93825031387840, 136339253048544, 140737488338736, 140737488338768, 140737347006847, 140737488338720, 136339253048064, 137988538489024, 136339253048064, 140737353248768, 0, 32768, 140737347055821, 140737488338848, 140737347038132, 136339253048072}}, sa_flags = 4096, sa_restorer = 0x7bfff4bf34e0}
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+No symbol table info available.
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4bf3220, __pos=3) at /usr/include/c++/15/string_view:260
+        __PRETTY_FUNCTION__ = &quot;constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_r&quot;...
+#7  0x0000555557930ebe in do_get (ch=0x7d5ff5e23680, args=...) at ~/xania/src/act_obj.cpp:648
+        container = 0x7ffff682a601 &lt;__libc_start_call_main+129&gt;
+        found = false
+        arg1 = &quot;all&quot;
+        arg2 = &quot;&quot;</pre></details></div><div class='card'><div class='meta'>2026-11-09 00:11 · run 20261109-001133-hunt · <code>82171fa443</code></div><p>Level-1 bots fighting angry cave beast (room [3713]).</p><p><code>do_get</code> act_obj.cpp:707 ← <code>loot_and_sacrifice_corpse</code> fight.cpp:565 ← <code>damage</code> fight.cpp:813 ← <code>one_hit</code> fight.cpp:535 ← <code>multi_hit</code> fight.cpp:263 ← <code>multi_hit</code> fight.cpp:234</p><details><summary>Backtrace and xania's last log lines</summary><pre>2026-11-09 05:10:52Z :: Incoming connection on channel 3.
 2026-11-09 05:10:53Z :: Huntern@localh*** [#249896952128253326] new player.
 2026-11-09 05:10:53Z :: Hunterm@localh*** [#249896952128253326] new player.
 2026-11-09 05:10:54Z :: Huntero@localh*** [#249896952128253326] new player.

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Bramtest</title><style>
+:root { --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --card: #ffffff; --line: #e4e1da; --accent: #8a3b12;
+        --high: #b42318; --medium: #b54708; --low: #475467; --code: #f3f1ec; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161513; --fg: #ecebe7; --muted: #a3a19b; --card: #1f1e1b; --line: #34322d; --accent: #f0a46b;
+          --high: #f97066; --medium: #fdb022; --low: #98a2b3; --code: #26241f; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+a { color: var(--accent); }
+h1 { font-size: 1.9rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; margin: 36px 0 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.sub { color: var(--muted); margin: 0 0 8px; }
+.headlines li { margin: 4px 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 12px 0; }
+.card h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.badge { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 1px 8px; border-radius: 999px;
+         border: 1px solid currentColor; margin-right: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+.high { color: var(--high); } .medium { color: var(--medium); } .low { color: var(--low); }
+.status-new { color: var(--accent); }
+pre { background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+      overflow-x: auto; font-size: 0.8rem; line-height: 1.45; }
+code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+.scroll { overflow-x: auto; }
+details { margin: 8px 0; } summary { cursor: pointer; color: var(--muted); }
+footer { margin-top: 48px; color: var(--muted); font-size: 0.85rem; }
+.chart { width: 100%; height: auto; display: block; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font-size: 11px; }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.chart .dot { fill: var(--accent); stroke: var(--card); stroke-width: 2; }
+.chart .hit { fill: transparent; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.journal p { margin: 4px 0; }
+.narrator { font-weight: 600; margin: 18px 0 4px; }
+.chron { font-style: italic; color: var(--muted); }
+.epithet { color: var(--accent); font-weight: 600; }
+</style></head><body><main><p class='sub'><a href='../index.html'>Xania Sim dispatch</a></p><h1>Bramtest</h1><p class='sub'>human cleric, level 1. 5 kills, 0 deaths, 3 flees in 0.3 hours played. First seen 2026-11-09 11:08.</p><h2>Journal</h2><div class='card journal'><p>Monday 9 November, in Midgaard.</p><p>A girdle shell snail: my first kill. I suppose I&#x27;m a proper adventurer now.</p><p>Ran from 3 fights. No shame in it.</p><p>All told, 2 girdle shell snails, 2 ducklings and a gutter rat.</p><p>More tomorrow.</p></div><h2>Level over time</h2><svg class='chart' viewBox='0 0 760 220' role='img' aria-label='Level over time'><line class='grid' x1='34' x2='748' y1='194.0' y2='194.0'/><text class='axis' x='28' y='198.0' text-anchor='end'>0</text><line class='grid' x1='34' x2='748' y1='102.0' y2='102.0'/><text class='axis' x='28' y='106.0' text-anchor='end'>1</text><line class='grid' x1='34' x2='748' y1='10.0' y2='10.0'/><text class='axis' x='28' y='14.0' text-anchor='end'>2</text><text class='axis' x='34.0' y='214' text-anchor='middle'>0 min</text><text class='axis' x='212.5' y='214' text-anchor='middle'>3 min</text><text class='axis' x='391.0' y='214' text-anchor='middle'>7 min</text><text class='axis' x='569.5' y='214' text-anchor='middle'>10 min</text><text class='axis' x='748.0' y='214' text-anchor='middle'>13 min</text><path class='line' d='M34.0,194.0 H34.0 V102.0 H748.0 V194.0 H748.0 V102.0 H748.0'/><g><circle class='hit' cx='34.0' cy='194.0' r='10'/><circle class='dot' cx='34.0' cy='194.0' r='4'/><title>level 0 at 2026-11-09 11:08</title></g><g><circle class='hit' cx='34.0' cy='102.0' r='10'/><circle class='dot' cx='34.0' cy='102.0' r='4'/><title>level 1 at 2026-11-09 11:08</title></g><g><circle class='hit' cx='748.0' cy='194.0' r='10'/><circle class='dot' cx='748.0' cy='194.0' r='4'/><title>level 0 at 2026-11-09 11:22</title></g><g><circle class='hit' cx='748.0' cy='102.0' r='10'/><circle class='dot' cx='748.0' cy='102.0' r='4'/><title>level 1 at 2026-11-09 11:22</title></g></svg><h2>Where</h2><div class='scroll'><table><tr><th>Area</th><th class='num'>Kills</th><th class='num'>Deaths</th><th class='num'>XP</th></tr><tr><td>Midgaard</td><td class='num'>3</td><td class='num'>0</td><td class='num'>569</td></tr><tr><td>Mud School</td><td class='num'>2</td><td class='num'>0</td><td class='num'>544</td></tr></table></div><h2>Recently</h2><ul><li><span class='meta'>2026-11-09 11:24 · Midgaard</span> killed A gutter rat</li><li><span class='meta'>2026-11-09 11:23 · Midgaard</span> fled a fight</li><li><span class='meta'>2026-11-09 11:22 · Midgaard</span> killed The duckling</li><li><span class='meta'>2026-11-09 11:22 · Mud School</span> killed A girdle shell snail</li><li><span class='meta'>2026-11-09 11:16 · Mud School</span> fled a fight</li><li><span class='meta'>2026-11-09 11:13 · Midgaard</span> fled a fight</li><li><span class='meta'>2026-11-09 11:09 · Midgaard</span> killed The duckling</li><li><span class='meta'>2026-11-09 11:08 · Mud School</span> killed A girdle shell snail</li></ul><h2>Fights: predicted vs seen</h2><p class='sub'>Explorer's prediction for each mob beside what bots saw. HP lost is a share of the bot's maximum.</p><div class='scroll'><table><tr><th>Mob</th><th>Bot</th><th class='num'>Fights</th><th class='num'>Won</th><th class='num'>HP lost</th><th class='num'>predicted</th><th class='num'>XP</th><th class='num'>predicted</th></tr><tr><td>the duckling</td><td>cleric 1</td><td class='num'>2</td><td class='num'>100%</td><td class='num'>35%</td><td class='num'>27%</td><td class='num'>284</td><td class='num'>216</td></tr><tr><td>a girdle shell snail</td><td>cleric 1</td><td class='num'>2</td><td class='num'>100%</td><td class='num'>0%</td><td class='num'>0%</td><td class='num'>272</td><td class='num'>216</td></tr><tr><td>a gutter rat</td><td>cleric 1</td><td class='num'>1</td><td class='num'>0%</td><td class='num'>60%</td><td class='num'>7%</td><td class='num'>0</td><td class='num'>216</td></tr><tr><td>the sparrow</td><td>cleric 1</td><td class='num'>1</td><td class='num'>0%</td><td class='num'>35%</td><td class='num'>11%</td><td class='num'>0</td><td class='num'>216</td></tr><tr><td>a grey hare</td><td>cleric 1</td><td class='num'>1</td><td class='num'>0%</td><td class='num'>60%</td><td class='num'>19%</td><td class='num'>0</td><td class='num'>255</td></tr></table></div><footer>Made by <a href="https://github.com/abraidotti/xania-sim">xania-sim</a>: bots playing <a href="https://github.com/mattgodbolt/xania">Xania</a>. <a href="../index.html">Dispatch home</a>.</footer></main></body></html>
