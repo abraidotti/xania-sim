@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Xania Sim dispatch</title><style>
+:root { --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --card: #ffffff; --line: #e4e1da; --accent: #8a3b12;
+        --high: #b42318; --medium: #b54708; --low: #475467; --code: #f3f1ec; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161513; --fg: #ecebe7; --muted: #a3a19b; --card: #1f1e1b; --line: #34322d; --accent: #f0a46b;
+          --high: #f97066; --medium: #fdb022; --low: #98a2b3; --code: #26241f; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+a { color: var(--accent); }
+h1 { font-size: 1.9rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; margin: 36px 0 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.sub { color: var(--muted); margin: 0 0 8px; }
+.headlines li { margin: 4px 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 12px 0; }
+.card h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.badge { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 1px 8px; border-radius: 999px;
+         border: 1px solid currentColor; margin-right: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+.high { color: var(--high); } .medium { color: var(--medium); } .low { color: var(--low); }
+.status-new { color: var(--accent); }
+pre { background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+      overflow-x: auto; font-size: 0.8rem; line-height: 1.45; }
+code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+.scroll { overflow-x: auto; }
+details { margin: 8px 0; } summary { cursor: pointer; color: var(--muted); }
+footer { margin-top: 48px; color: var(--muted); font-size: 0.85rem; }
+</style></head><body><main><h1>Xania Sim dispatch</h1><p class='sub'>What bots found playing Xania. Updated 2026-11-09 00:13.</p><h2>Headlines</h2><ul class='headlines'><li><a href="findings/c0d39d4416.html">xania crashed (SIGABRT, failed assertion) in do_get (act_obj.cpp)</a> (seen 2×)</li><li>Latest run: Hunt: angry cave beast, 4 bots, 2026-11-09 00:11 — fights 16, seconds 319, crashed True, findings 1</li></ul><h2>Findings</h2><div class="card"><h3><a href="findings/c0d39d4416.html">xania crashed (SIGABRT, failed assertion) in do_get (act_obj.cpp)</a></h3><div class="meta"><span class="badge high">high</span><span class="badge status-new">new</span>seen 2×, first 2026-11-09 00:05, last 2026-11-09 00:11 on <code>82171fa443</code> · <a href="https://github.com/abraidotti/xania/issues/1">issue</a></div><p>/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.</p></div><h2>Runs</h2><div class='scroll'><table><tr><th>When</th><th>Kind</th><th>Run</th><th>Game version</th><th>Summary</th><th>Findings</th></tr><tr><td>2026-11-09 00:11</td><td>hunt</td><td>Hunt: angry cave beast, 4 bots</td><td><code>82171fa443</code></td><td>fights 16, seconds 319, crashed True, findings 1</td><td><a href="findings/c0d39d4416.html">●</a> </td></tr><tr><td>2026-11-09 00:05</td><td>tests</td><td>Live scenarios</td><td><code>82171fa443</code></td><td>passed 15, findings 1</td><td><a href="findings/c0d39d4416.html">●</a> </td></tr><tr><td>2026-11-09 00:03</td><td>hunt</td><td>Hunt: angry cave beast, 4 bots</td><td><code>82171fa443</code></td><td>fights 20, seconds 363, crashed False, findings 0</td><td></td></tr></table></div><footer>Made by <a href="https://github.com/abraidotti/xania-sim">xania-sim</a>: bots playing <a href="https://github.com/mattgodbolt/xania">Xania</a>. <a href="index.html">Dispatch home</a>.</footer></main></body></html>
