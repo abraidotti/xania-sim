@@ -195,9 +195,12 @@ class Leveller:
                 rep.reason = f"no safe targets at level {level}"
                 break
             fought = False
-            for room in self.hunting_rooms(level):
+            rooms = self.hunting_rooms(level)
+            unroutable = 0
+            for room in rooms:
                 walk = await self.nav.walk_to(room)
                 if not walk.reached:
+                    unroutable += walk.reason == "no route"
                     continue
                 look = await self.bot.do("look", expect=ROOM_REPLY)
                 if AMBUSHED.search(look.text):  # something's already fighting it: fight back or escape, then go on
@@ -244,6 +247,10 @@ class Leveller:
                         self.tactics.level = level
                     await self.train()
                 self._targets.pop(level, None)  # observations changed: recompute this level's targets
+                break
+            if not fought and rooms and unroutable == len(rooms):
+                # every room with a safe target is behind rooms it avoids (or walled off): waiting won't change that
+                rep.reason = "safe targets only past dangerous rooms"
                 break
             if not fought:
                 empty_sweeps += 1
