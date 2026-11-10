@@ -86,8 +86,9 @@ class TrialResult:
 def add_findings(result: TrialResult, found: list, record: bool = True) -> TrialResult:
     """Attach findings (``findings.Finding``) to the result; with ``record``, also store the run and its findings in
     the lore database, which tells each finding's status (new, known, ignored) and whether it's the first time."""
-    if not record:
-        result.findings += [_ref(f, "new", True) for f in found]
+    if not record:  # still read what the database knows (read-only): a known crash isn't "new" just unrecorded
+        known = known_statuses([f.signature for f in found])
+        result.findings += [_ref(f, *known.get(f.signature, ("new", True))) for f in found]
         return result
     from xania_sim.record.findings import Journal
     from xania_sim.record.store import Lore
@@ -107,9 +108,32 @@ def add_findings(result: TrialResult, found: list, record: bool = True) -> Trial
     return result
 
 
+def known_statuses(signatures: list[str]) -> dict[str, tuple[str, bool]]:
+    """{signature: (status, first time)} for findings already in the lore database, opened read-only (no
+    database, or an unreadable one: {})."""
+    import sqlite3
+
+    from xania_sim.record.store import DEFAULT_PATH
+
+    if not signatures or not DEFAULT_PATH.exists():
+        return {}
+    try:
+        con = sqlite3.connect(f"file:{DEFAULT_PATH.as_posix()}?mode=ro", uri=True)
+        try:
+            marks = ",".join("?" * len(signatures))
+            rows = con.execute(f"SELECT signature, status FROM findings WHERE signature IN ({marks})", signatures)
+            return {sig: (status, False) for sig, status in rows}
+        finally:
+            con.close()
+    except sqlite3.Error:
+        return {}
+
+
 def _ref(f, status: str, first: bool) -> dict:
+    """A finding as the JSON lists it, with its summary (crash call chains, BUG lines) so the evidence survives even
+    when the run isn't recorded and the test MUD's logs are gone."""
     return {"signature": f.signature, "kind": f.kind, "title": f.title, "severity": f.severity, "status": status,
-            "first_time": first, "repro": f.repro}
+            "first_time": first, "repro": f.repro, "summary": f.summary}
 
 
 def game_version(result: TrialResult) -> TrialResult:

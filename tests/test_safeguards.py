@@ -106,3 +106,31 @@ def test_mobs_fighting_you_are_recognised():
     mi = MobIndex(world)
     view = "(Hide) the guardian beast is here, fighting YOU!\nThe giant troll is here, fighting YOU!"
     assert mi.in_view(view) == [2800, 2804]
+
+
+def test_unrecorded_runs_still_know_known_findings(tmp_path, monkeypatch):
+    """--no-record mustn't make a known crash look new (exit 1): statuses are read from the lore database,
+    read-only. The JSON keeps each finding's summary, since the test MUD's logs are temporary."""
+    import sqlite3
+
+    from xania_sim.record import result as R
+    from xania_sim.record import store
+    from xania_sim.record.findings import Finding, Journal
+
+    db = tmp_path / "lore.db"
+    con = sqlite3.connect(db)
+    j = Journal(con)
+    run = j.start_run("churn", "t")
+    known = Finding("crash", "crash:asan:Descriptor::is_switched", "uaf", "high", "Access: ... <- char_update")
+    j.record(run, known)
+    con.execute("UPDATE findings SET status = 'known'")
+    con.commit()
+    con.close()
+    monkeypatch.setattr(store, "DEFAULT_PATH", db)
+    res = R.TrialResult("area", "t")
+    R.add_findings(res, [known, Finding("crash", "crash:new:x", "new one", "high", "chain")], record=False)
+    assert [(f["status"], f["summary"]) for f in res.findings] == [("known", "Access: ... <- char_update"),
+                                                                    ("new", "chain")]
+    assert res.exit_code() == 1  # the new one still fails the run
+    res.findings = res.findings[:1]
+    assert res.exit_code() == 0  # the known one alone doesn't

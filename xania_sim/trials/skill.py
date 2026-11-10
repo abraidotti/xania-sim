@@ -313,7 +313,13 @@ async def run_skill(result, skill: str, port: int = 9100, classes: list[str] | N
                         await bot.close()
         finally:
             await d.close()
-        found += bug_line_findings(mud.log("xania"), repro)
+        log = mud.log("xania")  # the test MUD's data dir is temporary: keep xania's log with the run
+        (runs / "xania.log").write_text(log, encoding="utf-8")
+        result.artifacts["xania_log"] = str(runs / "xania.log")
+        if not mud.alive():
+            (runs / "xania-crash.txt").write_text(mud.crash_report(), encoding="utf-8")
+            result.artifacts["crash_report"] = str(runs / "xania-crash.txt")
+        found += bug_line_findings(log, repro)
     result.artifacts["transcripts"] = str(runs)
     return found
 

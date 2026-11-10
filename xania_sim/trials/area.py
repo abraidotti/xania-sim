@@ -43,7 +43,7 @@ from xania_sim.core.session import Bot
 from xania_sim.players.careful import Leveller, set_toggle
 from xania_sim.record.findings import Finding, bug_line_findings, crash_finding, transcript_tails
 from xania_sim.record.heartbeat import Heartbeat, Phases, null_beat
-from xania_sim.record.result import Outcome
+from xania_sim.record.result import Outcome, known_statuses
 from xania_sim.record.rooms import Fingerprints
 
 HERO = 91  # the highest mortal level
@@ -397,8 +397,34 @@ async def run_area(result, area: str, port: int = 9160, classes: list[str] | Non
     all_runs: list[AreaRun] = []
     async with TestMud(port=port, area_list=area_list) as mud:
         d = await Director.create(mud)
+        crashes = 0
+
+        async def after_crash(where: str) -> bool:
+            """Save the crash's evidence in the run folder, and restart the MUD if it's a crash we already know about
+            (a known bug the trial keeps tripping over, like xania#2 on quitting), at most MAX_RESTARTS times.
+            True if play can go on."""
+            nonlocal d, crashes
+            crashes += 1
+            report = mud.crash_report()
+            path = runs / f"xania-crash-{crashes}.txt"
+            path.write_text(report, encoding="utf-8")
+            result.artifacts[f"crash_report_{crashes}"] = str(path)
+            f = crash_finding(report, repro, f"{plan.name}, {where}", transcript_tails(runs))
+            found.append(f)
+            status = known_statuses([f.signature]).get(f.signature, ("new", True))[0]
+            beat("trial", "xania crashed", where=where, signature=f.signature, status=status, report=str(path))
+            if status != "known" or crashes > MAX_RESTARTS:
+                return False
+            await mud.restart()
+            d = await Director.create(mud)
+            beat("trial", "restarted after a known crash", restarts=crashes)
+            return True
+
         try:
             for label, level in bands.items():
+                # a crash can land a tick after the last level's bots quit (xania#2): check before staging anew
+                if not await asyncio.to_thread(mud.alive) and not await after_crash(f"before {label} ({level})"):
+                    break
                 bots: list[tuple[AreaRun, Bot]] = []
                 for cls in classes:  # staging goes through the one director connection: one at a time
                     run = AreaRun(cls, label, level)
@@ -425,11 +451,10 @@ async def run_area(result, area: str, port: int = 9160, classes: list[str] | Non
                         await asyncio.wait_for(bot.quit(), timeout=20)
                     except Exception:  # noqa: BLE001
                         await bot.close()
-                if crashed or not mud.alive():
-                    beat("trial", "xania crashed", band=label)
-                    found.append(crash_finding(mud.crash_report(), repro, f"{plan.name}, {label} ({level})",
-                                               transcript_tails(runs)))
-                    break
+                if crashed or not await asyncio.to_thread(mud.alive):
+                    if not await after_crash(f"{label} ({level})"):
+                        break
+                    continue
                 band_runs = [r for r, _ in bots]
                 verdict = band_verdict(band_runs)
                 beat("trial", f"done {label} ({level})", verdict=verdict)
@@ -442,7 +467,10 @@ async def run_area(result, area: str, port: int = 9160, classes: list[str] | Non
         finally:
             with contextlib.suppress(Exception):
                 await d.close()
-        found += bug_line_findings(mud.log("xania"), repro)
+        log = mud.log("xania")  # the test MUD's data dir is temporary: keep xania's log with the run
+        (runs / "xania.log").write_text(log, encoding="utf-8")
+        result.artifacts["xania_log"] = str(runs / "xania.log")
+        found += bug_line_findings(log, repro)
     found += _findings(plan, all_runs, repro)
     for run in all_runs:
         s = run.summary(len(plan.rooms))
@@ -459,6 +487,7 @@ async def run_area(result, area: str, port: int = 9160, classes: list[str] | Non
     return found
 
 
+MAX_RESTARTS = 2  # restarts after known crashes before a trial gives up
 CRASH_CHECK = 5  # seconds between checks that xania is still up while bots play
 
 
