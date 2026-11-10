@@ -64,9 +64,6 @@ footer { margin-top: 48px; color: var(--muted); font-size: 0.85rem; }
 .chart .hit { fill: transparent; }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .journal p { margin: 4px 0; }
-.narrator { font-weight: 600; margin: 18px 0 4px; }
-.chron { font-style: italic; color: var(--muted); }
-.epithet { color: var(--accent); font-weight: 600; }
 """
 
 
@@ -127,16 +124,6 @@ def _summary_text(s: dict) -> str:
     return ", ".join(f"{k.replace('_', ' ')} {v}" for k, v in s.items() if not isinstance(v, (dict, list)))
 
 
-def _legend_teaser(legends) -> str:
-    """The chronicle's opening lines and a link, for the front page."""
-    sections = [lines for narrator, lines in legends.digest() if narrator != "The Chronicler"]
-    if not sections:
-        return ""
-    first = sections[0][:3]
-    return ("<h2>The chronicle</h2><div class='card journal'>" + "".join(f"<p>{_e(ln)}</p>" for ln in first)
-            + "<p><a href='chronicle.html'>Read the whole chronicle</a></p></div>")
-
-
 def _bots_table(bots, root: str = "") -> str:
     if not bots:
         return "<p>No bots have played yet.</p>"
@@ -195,28 +182,10 @@ _EVENT_TEXT = {
 }
 
 
-def _bot_page(b, progress, comparisons, legends=None) -> str:
-    info = legends.info.get(b.name, {}) if legends is not None else {}
-    title = f" <span class='epithet'>{_e(info['epithet'])}</span>" if info.get("epithet") else ""
-    parts = [f"<p class='sub'><a href='../index.html'>{TITLE}</a></p><h1>{_e(b.name)}{title}</h1>",
+def _bot_page(b, progress, comparisons) -> str:
+    parts = [f"<p class='sub'><a href='../index.html'>{TITLE}</a></p><h1>{_e(b.name)}</h1>",
              f"<p class='sub'>{_e(b.race)} {_e(b.cls)}, level {b.level}. {b.kills} kills, {b.deaths} deaths, "
              f"{b.flees} flees in {b.hours:.1f} hours played. First seen {_when(b.created)}.</p>"]
-    if legends is not None:
-        p = legends.persona(b.name)
-        if p.summary:
-            parts.append(f"<p>\u201c{_e(p.summary)}\u201d</p>")
-        if info.get("epithets"):
-            parts.append("<p>" + " · ".join(f"<span class='epithet'>{_e(e.title)}</span> ({_e(e.reason)})"
-                                            for e in info["epithets"]) + "</p>")
-        if info.get("nemeses"):
-            parts.append("<p>Nemeses: " + ", ".join(
-                f"{_e(n['key'])} (killed {_e(b.name)} {n['data'].get('kills_me', n['count'])}×"
-                + (", avenged" if n["data"].get("revenge") else "") + ")" for n in info["nemeses"]) + "</p>")
-        days = legends.days(b.name)
-        if days:
-            parts.append("<h2>Journal</h2>" + "".join(
-                "<div class='card journal'>" + "".join(f"<p>{_e(ln)}</p>" for ln in entry) + "</div>"
-                for _, entry in days[:14]))
     parts += ["<h2>Level over time</h2>", level_chart(progress.levels(b.name))]
     areas = progress.by_area(b.name)
     if areas:
@@ -233,35 +202,6 @@ def _bot_page(b, progress, comparisons, legends=None) -> str:
     if mine:
         parts.append(_comparison_table(mine))
     return _page(b.name, "".join(parts), "../")
-
-
-def _chronicle_page(legends) -> str:
-    from . import chronicle as C
-
-    parts = [f"<p class='sub'><a href='index.html'>{TITLE}</a></p><h1>The chronicle</h1>",
-             f"<p class='sub'>The companions' own words, {_e(legends.period)}, framed by the Chronicler.</p>"]
-    for narrator, lines in legends.digest():
-        cls = " chron" if narrator == "The Chronicler" else ""
-        who = "" if narrator == "The Chronicler" else f"<div class='narrator'>{_e(narrator)}</div>"
-        parts.append(f"{who}<div class='journal{cls}'>" + "".join(f"<p>{_e(ln)}</p>" for ln in lines) + "</div>")
-    dead = C.fallen(legends.everything)
-    parts.append("<h2>Hall of the fallen</h2>" + ("<div class='scroll'><table><tr><th>When</th><th>Who</th><th>Killed by"
-                 "</th><th>Where</th></tr>" + "".join(
-                     f"<tr><td>{_when(d['at'])}</td><td><a href='bots/{_e(d['bot'].lower())}.html'>{_e(d['bot'])}</a>"
-                     f"</td><td>{_e(d['killer'])}</td><td>{_e(d['area'])}</td></tr>" for d in dead[:50])
-                 + "</table></div>" if dead else "<p>No one has died. Yet.</p>"))
-    cursed = C.cursed_places(legends.everything)
-    if cursed:
-        parts.append("<h2>Cursed places</h2><div class='scroll'><table><tr><th>Area</th><th class='num'>Deaths</th>"
-                     "<th class='num'>Kills</th></tr>" + "".join(
-                         f"<tr><td>{_e(a)}</td><td class='num'>{d}</td><td class='num'>{k}</td></tr>" for a, d, k in cursed)
-                     + "</table></div>")
-    titled = [(b, i["epithets"]) for b, i in legends.info.items() if i.get("epithets")]
-    if titled:
-        parts.append("<h2>Epithets</h2><ul>" + "".join(
-            f"<li>{_e(b)} <span class='epithet'>{_e(eps[0].title)}</span>: {_e(eps[0].reason)}</li>" for b, eps in titled)
-            + "</ul>")
-    return _page("The chronicle", "".join(parts))
 
 
 def _pct(v) -> str:
@@ -282,7 +222,7 @@ def _comparison_table(rows) -> str:
             f"{body}</table></div>")
 
 
-def _index(findings: list[dict], runs: list[dict], generated: float, bots=(), comparisons=(), legends=None) -> str:
+def _index(findings: list[dict], runs: list[dict], generated: float, bots=(), comparisons=()) -> str:
     rows = "".join(
         f"<tr><td>{_when(r['started'])}</td><td>{_e(r['kind'])}</td><td>{_e(r['title'])}</td>"
         f"<td>{_commit(r['commit'])}{' (dirty)' if r['dirty'] else ''}</td><td>{_e(_summary_text(r['summary']))}</td>"
@@ -290,8 +230,7 @@ def _index(findings: list[dict], runs: list[dict], generated: float, bots=(), co
         for r in runs)
     body = (f"<h1>{TITLE}</h1><p class='sub'>What bots found playing Xania. Updated {_when(generated)}.</p>"
             "<h2>Headlines</h2><ul class='headlines'>" + "".join(f"<li>{h}</li>" for h in _headlines(findings, runs))
-            + "</ul>" + (_legend_teaser(legends) if legends is not None else "")
-            + "<h2>Bots</h2>" + _bots_table(list(bots))
+            + "</ul><h2>Bots</h2>" + _bots_table(list(bots))
             + (_comparison_table(list(comparisons)[:20]) if comparisons else "")
             + "<h2>Findings</h2>" + ("".join(_card(f) for f in findings) or "<p>None yet.</p>")
             + "<h2>Runs</h2><div class='scroll'><table><tr><th>When</th><th>Kind</th><th>Run</th><th>Game version</th>"
@@ -324,7 +263,7 @@ def _finding_page(f: dict, occurrences: list[dict]) -> str:
     return _page(f["title"], "".join(parts), "../")
 
 
-def build(journal: Journal, out_dir: Path, progress=None, comparisons=(), legends=None) -> Path:
+def build(journal: Journal, out_dir: Path, progress=None, comparisons=()) -> Path:
     """``progress`` (events.Progress) adds the bots table and a page per bot; ``comparisons`` (fight.compare) adds
     predicted-vs-seen fight tables. Both also go into dispatch.json."""
     from dataclasses import asdict
@@ -336,13 +275,11 @@ def build(journal: Journal, out_dir: Path, progress=None, comparisons=(), legend
     findings, runs, now = journal.findings(), journal.runs(), time.time()
     bots = progress.bots() if progress is not None else []
     comparisons = list(comparisons)
-    (out_dir / "index.html").write_text(_index(findings, runs, now, bots, comparisons, legends), encoding="utf-8")
-    if legends is not None:
-        (out_dir / "chronicle.html").write_text(_chronicle_page(legends), encoding="utf-8")
+    (out_dir / "index.html").write_text(_index(findings, runs, now, bots, comparisons), encoding="utf-8")
     if bots:
         (out_dir / "bots").mkdir()
     for b in bots:
-        (out_dir / "bots" / f"{b.name.lower()}.html").write_text(_bot_page(b, progress, comparisons, legends), encoding="utf-8")
+        (out_dir / "bots" / f"{b.name.lower()}.html").write_text(_bot_page(b, progress, comparisons), encoding="utf-8")
     data = {"generated": now, "findings": [], "runs": runs, "bots": [asdict(b) for b in bots],
             "fights": [asdict(c) for c in comparisons]}
     for f in findings:
@@ -362,7 +299,7 @@ def _git(repo: Path, *args: str, check: bool = True) -> str:
 
 
 def publish(journal: Journal, repo: Path, branch: str = "dispatch", deploy: bool = True, progress=None,
-            comparisons=(), legends=None) -> str:
+            comparisons=()) -> str:
     """Build the site, commit it as the only content of ``branch`` (history kept, one commit per publish), push,
     and run the Pages workflow. Returns the pushed commit."""
     repo = Path(repo)
@@ -377,7 +314,7 @@ def publish(journal: Journal, repo: Path, branch: str = "dispatch", deploy: bool
             else:
                 _git(work, "checkout", "-q", "--orphan", branch)
             _git(work, "rm", "-rqf", "--ignore-unmatch", ".")
-            site = build(journal, Path(tmp) / "build", progress, comparisons, legends)
+            site = build(journal, Path(tmp) / "build", progress, comparisons)
             for p in site.iterdir():
                 dest = work / p.name
                 shutil.copytree(p, dest) if p.is_dir() else shutil.copy2(p, dest)

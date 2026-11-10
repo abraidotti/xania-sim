@@ -108,7 +108,7 @@ class Leveller:
         await self.nav.recall()
         await recover(self.bot, timeout=timeout, on_attack=self.nav.escape)
 
-    flee_at = FLEE_AT  # a persona can set its own (persona.flee_at)
+    flee_at = FLEE_AT  # subclasses (or callers) can set their own
     practise_skills = True  # spend practice sessions at the nearest guildmaster at the start and after each level
 
     async def train(self) -> None:

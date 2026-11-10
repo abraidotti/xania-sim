@@ -1,13 +1,18 @@
 # Xania Sim
 
-Bots that play [Xania](https://github.com/mattgodbolt/xania) over telnet. They're for three things:
+Bots that play [Xania](https://github.com/mattgodbolt/xania) over telnet to test it. Xania Sim simulates
+players, good and bad: anything a real person could do through a MUD client.
 
-- **Company**: characters who live in the world while you play (in progress; see the roadmap).
 - **Finding bugs**: bots play the real game and do what players do, so they run into crashes and oddities that
   nobody would find by reading code. A crash comes back as a report with a source-level backtrace.
 - **Testing features**: scripted scenarios that check new skills, spells, areas and systems on the real game.
+- **Measuring the game**: bots level, fight and survive, and their results sit beside Xania Explorer's predictions.
 
-Bots never touch your real game: tests and hunts run on their own isolated MUD, with its own players.
+An immortal "director" only sets the stage (levels, skills, gear) so a test can start where a real player would be;
+from there the bots just play. Bots never touch your real game: tests run on their own isolated MUD.
+
+Companion bots (characters who play beside you and write their own legends) used to live here and are now their
+own project, [Xania Companions](https://github.com/abraidotti/xania-companions), built on Xania Sim.
 
 It works alongside [Xania Explorer](../xania-explorer): Explorer reads the area files and C++ tables and predicts
 what should happen; the bots check what does happen. xania-sim imports Explorer's API (`xania_explorer.api`) for the
@@ -128,32 +133,14 @@ async def test_mage_starts_with_magic_missile(new_bot):
 - Names: the MUD refuses names that match a mob keyword. The `names` fixture (and `xania_sim.names.bot_names`)
   hands out acceptable ones.
 
-## Companions and levelling bots
+## Levelling bots
 
 ```
-python -m xania_sim companion --persona bram --master Sandro    # Bram, a cleric, joins your MUD (port 9000) for an hour
-python -m xania_sim companion --persona wren --master Sandro --minutes 180
-python -m xania_sim companion Zed --cls knight --master Sandro  # no persona file: middling traits, the shared voice
 python -m xania_sim level Hilda --goal 5                     # a knight that levels on its own, survival first
 python -m xania_sim level Hilda --test-mud --port 9100       # the same on an isolated test MUD
 ```
 
-A companion greets you by tell and takes orders the same way (`tell Bram follow`): `follow`, `stay`, `status`,
-`home`, `rest`, `hunt`, `heal`, `buff`, `help`, `bye`. Once it follows you, `group Bram` and it fights beside you
-(autoassist); a healer checks the group and casts its best cure on whoever drops below half their HP. `hunt` sends
-it levelling on its own until you tell it anything else. Bots log in with the password `botpass1` unless you pass
-`--password`; a new name creates the character.
-
-Anything else you tell it is answered in its own voice: greetings, thanks, insults, "how are you?", "who are
-you?", "tell me a joke", "where should I level?" (an accurate answer: the areas where its safe targets spawn at
-its level) and "who killed you?" (from its memory). It also remarks on what happens to it, as often as its
-chattiness says: levels, its first kill, close calls, deaths, and revenge on whatever killed it.
-
-Personas live in [personas/](personas/) as TOML: name, class, race, a one-line summary, catchphrases, traits
-(bravery sets its flee threshold, between 45% and 30% of HP; loyalty how soon it heals the group; chattiness how
-often it talks) and extra lines per intent. Three ship: Bram (a worried cleric), Hilda (a terse knight) and Wren
-(a chatty, cowardly mage). What a bot remembers (people, places, nemeses, firsts) stays in the lore database
-between sessions.
+Bots log in with the password `botpass1` unless you pass `--password`; a new name creates the character.
 
 Levelling is survival first: a bot only starts fights predicted (by Explorer, then by the shared fight log once bots
 have seen enough) to cost well under half its HP, skips rooms where others could join in, flees early (standing up
@@ -161,39 +148,6 @@ first if it's been tripped or bashed), rests at the temple, and never goes back 
 If something attacks it while it rests it stops and escapes (praying to recall if it has no moves left to run),
 and one death to a mob takes that mob off the list for its level band. At the start and after every level it
 walks to the nearest guildmaster and spends its practice sessions on its class's priorities (`trainer.py`).
-
-## A roster, all weekend
-
-```
-cp roster.example.toml roster.toml        # then set your character's name and pick the bots
-python -m xania_sim companions --roster roster.toml           # runs until Ctrl+C
-python -m xania_sim companions --roster roster.toml --hours 48
-```
-
-The runner keeps every bot in the roster playing on your MUD: logins staggered, each within its daily window and
-under its daily cap of hours, in sessions that end with the journal posted as a note. A companion whose master is
-offline (or hasn't said anything for a few minutes) goes hunting on its own and drops everything when you tell it
-something. A failed session (the MUD restarting, a dropped connection) is retried with a growing backoff; a bot
-you've told `bye` takes an hour off. Ctrl+C makes every bot quit cleanly.
-
-## Legends
-
-```
-python -m xania_sim chronicle             # the digest: every bot's journal for the last 3 days, framed by the Chronicler
-python -m xania_sim chronicle wren        # one bot: its epithets, nemeses and journal day by day
-python -m xania_sim chronicle --days 7
-```
-
-Bots keep journals. Each day's entry is written in the bot's own voice from its event log: the best moments
-(deaths, revenge, milestone levels, close calls, first kills, new companions, loot) in order, a tally of the rest
-("9 gutter rats, 3 ducklings and 2 others") and a closing line that depends on how the day went. The same day
-always reads the same. At the end of a companion session the journal is posted as an in-game note (to you by
-default; `--notes all` for everyone, `--notes none` to keep it quiet).
-
-They also earn **epithets** from their record (the Ratcatcher, Spiderbane, Twice-Dead, the Avenger, the Unbroken,
-the Wanderer...) and wear the best one as their in-game title; a mob that kills a bot becomes its **nemesis**
-until it's avenged. Areas where bots keep dying are **cursed places**. The dispatch has the whole chronicle (several
-narrators stitched together, a hall of the fallen, cursed places, epithets), and each bot's page has its journal.
 
 ## Progress: what each bot has done
 
@@ -226,35 +180,28 @@ plain SQLite in `state/lore.db`, for other tools to read.
 | `fight.py` | Recognising mobs in a room, `safe_targets`, `fight()` round by round, `recover()`, the shared `FightLog`, `compare` |
 | `trainer.py` | Practice: reads the practice table, picks skills by class priority, finds a practice mob |
 | `level.py` | `Leveller`: go where the safe fights are, fight one at a time, rest, flee and never go back |
-| `companion.py` | `Companion`: orders by tell, follow/group/autoassist, healing the group, status reports, hunting |
-| `persona.py` | Personas from TOML: traits, voice lines, catchphrases; the flee and heal thresholds they imply |
-| `memory.py` | `Memory` (facts per bot: people, places, nemeses, firsts) and `Keeper`, which builds them from events |
-| `dialogue.py` | Intents from what's said, voiced lines without repeats, event reactions, levelling advice; an off-by-default LLM hook |
-| `chronicle.py` | Highlights, journals, epithets, the fallen, cursed places, the digest, posting notes |
-| `legends.py` | Gathers the legends from the lore database for the `chronicle` command and the dispatch |
-| `companions.py` | The roster runner: windows, daily caps, staggered logins, backoff, clean shutdown |
-| `play.py` | The `companion` and `level` commands: one bot playing for a while, recorded in the event log |
+| `play.py` | The `level` command: one bot playing for a while, recorded in the event log |
 | `events.py` | `parse(text)` into events, `Recorder` (watches a bot, stores events + snapshots), `Progress` (reads them) |
 | `nav.py` | `Navigator`: where am I, safe routes (`danger_rooms` from aggressive spawns + `predict_fight`), walking, exploring |
 
 ## Roadmap
 
-The goal: companion bots with agency in the world, who play alongside you, are tracked over time, and write
-their own legend (journals, nemeses, epithets). No LLM needed; there's an optional hook for one later.
+Scope: Xania Sim simulates players, good and bad, through the client. Testing code directly (unit tests, fuzzing
+functions, checking files) belongs to Xania Builder, which will use Sim's scenarios to check its own changes.
 
 - **M1 (done)**: telnet, lobby, prompt, isolated test MUD, smoke scenarios (now the regression suite).
 - **M2 (done)**: navigation with Explorer's map (`locate`, `walk_to`, `explore(area)`), danger-aware.
 - **M3a (done)**: the game repo (version, build check), skill/spell scan with fingerprints, shared lore (SQLite).
 - **M3 (done)**: survival and levelling: pick safe fights with `api.predict_fight`, rest, flee, recall.
 - **M4 (done)**: event log (SQLite), `xania_sim status`, progress pages on the dispatch beside Explorer's predictions.
-- **M5 (done)**: companionship: follow, group, assist, heal, party commands by `tell`.
-- **M6 (done)**: personas, memory and dialogue (intent templates in each persona's voice, event-driven remarks).
-- **M7 (done)**: legends: journals posted as in-game notes, nemeses, epithets, cursed places, a weekend digest.
-- **M8 (done)**: the companions runner (a roster all weekend on your MUD).
+- **M5-M8**: companionship, personas, legends and the roster runner, now [Xania Companions](https://github.com/abraidotti/xania-companions).
+- **Next**: the director and staging (bots at any level with chosen gear and skills), combat tactics; careless,
+  abusive and exploiting players (fuzzing commands, flooding, exploit hunts); balance trials; area testing;
+  `--json` output and exit codes so Builder can run Sim in a pipeline.
 
 ## Platform notes
 
 Xania Sim only needs Python 3.12+ and a machine that can build and run Xania; bots talk to the MUD over telnet,
 so they can run anywhere that reaches it. If Xania runs under WSL on Windows, the sim finds it there:
-`XANIA_SIM_DISTRO` names the distro, and the test MUD and the companions runner keep a `wsl.exe` session attached
-while they run (WSL stops a distro that has none).
+`XANIA_SIM_DISTRO` names the distro, and the test MUD keeps a `wsl.exe` session attached
+while it runs (WSL stops a distro that has none).

@@ -271,7 +271,7 @@ class Progress:
         return [{"bot": b, "at": at, "kind": k, "room": r, "area": a, "data": json.loads(d)} for b, at, k, r, a, d in rows]
 
     def timeline(self, bot: str | None = None, since: float = 0, until: float = float("inf")) -> list[dict]:
-        """Every event in a period, oldest first (for the chronicle)."""
+        """Every event in a period, oldest first."""
         q = "SELECT bot, at, kind, room, area, data FROM events WHERE at >= ? AND at < ?"
         args: list = [since, until if until != float("inf") else 1e18]
         if bot:
