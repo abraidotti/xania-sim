@@ -24,7 +24,7 @@ import subprocess
 import sys
 import time
 
-from .telnet import Closed, Connection, Timeout
+from xania_sim.core.telnet import Closed, Connection, Timeout
 
 DISTRO = os.environ.get("XANIA_SIM_DISTRO", "Ubuntu-26.04")
 XANIA = os.environ.get("XANIA_SIM_XANIA", "$HOME/xania")

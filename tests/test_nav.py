@@ -6,9 +6,9 @@ import pytest
 from fake_mud import FakeMud
 from xania_explorer.areafile import flags as F
 from xania_explorer.areafile.world import load_world
-from xania_sim.nav import Navigator
-from xania_sim.rooms import Fingerprints, parse_view
-from xania_sim.session import Bot, Profile
+from xania_sim.activities.move import Navigator
+from xania_sim.record.rooms import Fingerprints, parse_view
+from xania_sim.core.session import Bot, Profile
 
 
 def _room(vnum, name, desc, exits=""):
@@ -55,7 +55,7 @@ class Town:
 
     def view(self) -> str:
         r = self.w.rooms[self.here]
-        from xania_sim.rooms import plain
+        from xania_sim.record.rooms import plain
 
         exits = " ".join(F.DIRECTIONS[d] for d in sorted(r.exits) if (self.here, d) not in self.closed) or "none"
         return f"{plain(r.name)}\n\r\n\r  {r.description}\n\r\n\r[Exits: {exits}]\n\r"

@@ -12,15 +12,15 @@ import contextlib
 import time
 from pathlib import Path
 
-from . import world as W
-from .events import Recorder
-from .fight import FightLog, MobIndex
-from .level import Leveller
-from .nav import Navigator
-from .rooms import Fingerprints
-from .server import TestMud
-from .session import Bot, Profile
-from .store import Lore
+from xania_sim.core import world as W
+from xania_sim.record.events import Recorder
+from xania_sim.activities.fight import FightLog, MobIndex
+from xania_sim.players.careful import Leveller
+from xania_sim.activities.move import Navigator
+from xania_sim.record.rooms import Fingerprints
+from xania_sim.core.server import TestMud
+from xania_sim.core.session import Bot, Profile
+from xania_sim.record.store import Lore
 
 
 async def _with_mud(test_mud: bool, port: int, play):

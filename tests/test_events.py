@@ -2,8 +2,8 @@
 
 import sqlite3
 
-from xania_sim.events import Progress, Recorder, parse
-from xania_sim.parsers import Prompt
+from xania_sim.record.events import Progress, Recorder, parse
+from xania_sim.core.parsers import Prompt
 
 # from runs/level-101536 (a level-1 knight against a small spider in the sewers), plus messages from the source
 CAPTURED = """
@@ -88,9 +88,9 @@ def test_recorder_stores_events_with_context_and_snapshots():
 
 
 def test_the_dispatch_gets_bot_pages(tmp_path):
-    from xania_sim import dispatch as D
-    from xania_sim.fight import Comparison
-    from xania_sim.findings import Journal
+    from xania_sim.report import dispatch as D
+    from xania_sim.activities.fight import Comparison
+    from xania_sim.record.findings import Journal
 
     db, clock = sqlite3.connect(":memory:"), [1000.0]
     rec = Recorder(db, FakeBot(), cls="knight", race="human", level=1, room=lambda: 3150, area_of=lambda v: "Sewers",
@@ -108,7 +108,7 @@ def test_the_dispatch_gets_bot_pages(tmp_path):
 
 
 def test_the_killer_is_whoever_was_hitting_not_the_last_target():
-    from xania_sim.events import attacker
+    from xania_sim.record.events import attacker
 
     assert attacker("Your pierce hits the gutter rat.\nThe small spider's slash splits your head.\n") == "the small spider"
     assert attacker("The small spider's trip misses your left shin.\n") == "the small spider"

@@ -15,9 +15,9 @@ from dataclasses import dataclass
 
 from xania_explorer import api
 
-from .rooms import EXITS, plain
-from .session import Bot, Response
-from .store import BAND_WIDTH, band_of
+from xania_sim.record.rooms import EXITS, plain
+from xania_sim.core.session import Bot, Response
+from xania_sim.record.store import BAND_WIDTH, band_of
 
 SAFE_SHARE = 0.5  # start a fight only if it's predicted (or seen) to cost under half the bot's HP
 FLEE_AT = 0.35  # flee when HP falls below this share

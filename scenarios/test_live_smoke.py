@@ -2,7 +2,7 @@
 
 import pytest
 
-from xania_sim.session import Bot, Profile
+from xania_sim.core.session import Bot, Profile
 
 
 async def test_new_character_starts_in_mud_school(new_bot):
@@ -48,7 +48,7 @@ async def test_several_bots_at_once(new_bot):
 
 
 async def test_wrong_password_and_mob_names_are_refused(mud, names):
-    from xania_sim.session import LoginError
+    from xania_sim.core.session import LoginError
 
     name = names()
     b = Bot(name, "simpass1", host=mud.host, port=mud.port)

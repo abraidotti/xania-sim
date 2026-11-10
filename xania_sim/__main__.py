@@ -7,10 +7,10 @@ import asyncio
 import time
 from pathlib import Path
 
-from . import world
-from .names import bot_names, mob_words
-from .server import TestMud
-from .session import Bot, Profile
+from xania_sim.core import world
+from xania_sim.core.names import bot_names, mob_words
+from xania_sim.core.server import TestMud
+from xania_sim.core.session import Bot, Profile
 
 
 async def smoke(port: int, existing: bool) -> None:
@@ -64,7 +64,7 @@ def main() -> None:
     d = sub.add_parser("dispatch", help="build the dispatch website locally")
     d.add_argument("--out", default="build/dispatch")
     sub.add_parser("publish", help="build the dispatch, push it to the dispatch branch and deploy it to GitHub Pages")
-    from . import play
+    from xania_sim.players import run as play
 
     play.add_commands(sub)
     args = ap.parse_args()
@@ -73,7 +73,7 @@ def main() -> None:
     elif args.cmd == "lore":
         lore_cmd(args.db, args.level, args.names)
     elif args.cmd == "hunt":
-        from .hunt import hunt
+        from xania_sim.trials.hunt import hunt
 
         r = asyncio.run(hunt(args.mob, args.bots, args.minutes, args.port, record=not args.no_record))
         print(f"{r.fights} fights in {r.seconds:.0f} s, {r.errors} bot errors")
@@ -87,7 +87,7 @@ def main() -> None:
     elif args.cmd in ("report", "findings", "dispatch", "publish"):
         journal_cmd(args)
     elif args.cmd == "churn":
-        from .churn import churn
+        from xania_sim.trials.churn import churn
 
         r = asyncio.run(churn(args.bots, args.minutes, args.port, record=not args.no_record))
         print(f"{r.quits} quits in {r.seconds:.0f} s, {len(r.errors)} bot errors")
@@ -104,8 +104,8 @@ def main() -> None:
 
 def _progress(lore):
     """The event log and the predicted-vs-seen fights (no comparisons if the world can't be loaded)."""
-    from .events import Progress
-    from .fight import FightLog, compare
+    from xania_sim.record.events import Progress
+    from xania_sim.activities.fight import FightLog, compare
 
     try:
         comparisons = compare(world.load(), FightLog(lore.db))
@@ -116,9 +116,9 @@ def _progress(lore):
 
 
 def journal_cmd(args) -> None:
-    from . import dispatch as D
-    from .findings import Journal
-    from .store import Lore
+    from xania_sim.report import dispatch as D
+    from xania_sim.record.findings import Journal
+    from xania_sim.record.store import Lore
 
     lore = Lore()
     journal = Journal(lore.db)
@@ -149,9 +149,9 @@ def journal_cmd(args) -> None:
 
 
 def status_cmd(bot: str | None) -> None:
-    from . import dispatch as D
-    from .events import Progress
-    from .store import Lore
+    from xania_sim.report import dispatch as D
+    from xania_sim.record.events import Progress
+    from xania_sim.record.store import Lore
 
     lore = Lore()
     p = Progress(lore.db)
@@ -174,9 +174,9 @@ def status_cmd(bot: str | None) -> None:
 def lore_cmd(db: str | None, level: int, names: list[str]) -> None:
     from collections import Counter
 
-    from .repo import GameRepo
-    from .scan import scan_source
-    from .store import DEFAULT_PATH, Lore, band_label, band_of
+    from xania_sim.core.repo import GameRepo
+    from xania_sim.record.scan import scan_source
+    from xania_sim.record.store import DEFAULT_PATH, Lore, band_label, band_of
 
     repo = GameRepo()
     v = repo.version()

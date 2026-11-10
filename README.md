@@ -147,7 +147,7 @@ have seen enough) to cost well under half its HP, skips rooms where others could
 first if it's been tripped or bashed), rests at the temple, and never goes back to a room it fled from or died in.
 If something attacks it while it rests it stops and escapes (praying to recall if it has no moves left to run),
 and one death to a mob takes that mob off the list for its level band. At the start and after every level it
-walks to the nearest guildmaster and spends its practice sessions on its class's priorities (`trainer.py`).
+walks to the nearest guildmaster and spends its practice sessions on its class's priorities (`activities/practice.py`).
 
 ## Progress: what each bot has done
 
@@ -157,7 +157,7 @@ python -m xania_sim status lvlknia        # one bot's areas and recent events to
 ```
 
 Everything a bot reads is parsed into events (kills, deaths with their killer, xp, levels, skill gains, loot, gold,
-tells, says, channels, follows, groups; the messages are Xania's own, with file:line in `events.py`) and stored
+tells, says, channels, follows, groups; the messages are Xania's own, with file:line in `record/events.py`) and stored
 with the room and area it happened in, next to prompt snapshots (HP, mana, moves, xp, gold) taken as they change.
 The dispatch gets a bots table and a page per bot: level over time, where it fought, what it did lately, and its
 fights beside Explorer's predictions (`fight.compare`). The tables (`bots`, `events`, `snapshots`, `fights`) are
@@ -165,24 +165,33 @@ plain SQLite in `state/lore.db`, for other tools to read.
 
 ## How it fits together
 
-| Module | What it does |
-|---|---|
-| `telnet.py` | Connection to doorman: refuses telnet options, strips ANSI, `expect(pattern)` / `send(line)`, transcript |
-| `session.py` | `Bot`: the lobby (create or log in, as in `nanny`, xania/src/MudImpl.cpp), then `do(command)` |
-| `parsers.py` | Pure parsing (the bot prompt, lines); tested against captured output |
-| `server.py` | `TestMud`: its own doorman + xania on its own port with a throwaway data dir (`/tmp/xania-sim/<port>`) |
-| `names.py` | Names the MUD accepts (`validate_player_name`) |
-| `world.py` | Explorer's world, loaded from the checkout the test MUD runs |
-| `rooms.py` | Parsing room views (`room_look`, act_info.cpp) and recognising rooms by fingerprint |
-| `repo.py` | `GameRepo`: the game's git repo (`XANIA_SIM_XANIA`): commit, dirty state, is the build older than the source |
-| `scan.py` | Skills/spells from the repo's source (levels via Explorer; entry text, target, position read here) + fingerprints |
-| `store.py` | `Lore`: shared SQLite (`state/lore.db`): abilities and their changes, raw observations, claims, status per band |
-| `fight.py` | Recognising mobs in a room, `safe_targets`, `fight()` round by round, `recover()`, the shared `FightLog`, `compare` |
-| `trainer.py` | Practice: reads the practice table, picks skills by class priority, finds a practice mob |
-| `level.py` | `Leveller`: go where the safe fights are, fight one at a time, rest, flee and never go back |
-| `play.py` | The `level` command: one bot playing for a while, recorded in the event log |
-| `events.py` | `parse(text)` into events, `Recorder` (watches a bot, stores events + snapshots), `Progress` (reads them) |
-| `nav.py` | `Navigator`: where am I, safe routes (`danger_rooms` from aggressive spawns + `predict_fight`), walking, exploring |
+Xania Sim is in layers. Activities are what a player does; players choose activities; trials combine them into
+tests. Other tools (Xania Builder, Xania Companions) build on the activities.
+
+| Layer | Module | What it does |
+|---|---|---|
+| core | `telnet.py` | Connection to doorman: refuses telnet options, strips ANSI, `expect(pattern)` / `send(line)`, transcript |
+| core | `session.py` | `Bot`: the lobby (create or log in, as in `nanny`, xania/src/MudImpl.cpp), then `do(command)` |
+| core | `parsers.py` | Pure parsing (the bot prompt, lines); tested against captured output |
+| core | `server.py` | `TestMud`: its own doorman + xania on its own port with a throwaway data dir (`/tmp/xania-sim/<port>`) |
+| core | `director.py` | An immortal on the test MUD that sets the stage: levels, skills, objects, moving players |
+| core | `names.py` | Names the MUD accepts (`validate_player_name`) |
+| core | `world.py` | Explorer's world, loaded from the checkout the test MUD runs |
+| core | `repo.py` | `GameRepo`: the game's git repo (`XANIA_SIM_XANIA`): commit, dirty state, is the build older than the source |
+| activities | `move.py` | `Navigator`: where am I, safe routes (`danger_rooms` from aggressive spawns + `predict_fight`), walking, exploring |
+| activities | `fight.py` | Recognising mobs in a room, `safe_targets`, `fight()` round by round, `recover()`, the shared `FightLog`, `compare` |
+| activities | `practice.py` | Practice: reads the practice table, picks skills by class priority, finds a practice mob |
+| players | `careful.py` | `Leveller`: the survival-first player: go where the safe fights are, fight one at a time, rest, flee |
+| players | `run.py` | The `level` command: one careful player for a while, recorded in the event log |
+| record | `events.py` | `parse(text)` into events, `Recorder` (watches a bot, stores events + snapshots), `Progress` (reads them) |
+| record | `findings.py` | Runs and findings (crashes with gdb or AddressSanitizer stacks), deduplicated by signature |
+| record | `rooms.py` | Parsing room views (`room_look`, act_info.cpp) and recognising rooms by fingerprint |
+| record | `scan.py` | Skills/spells from the repo's source (levels via Explorer; entry text, target, position read here) + fingerprints |
+| record | `store.py` | `Lore`: shared SQLite (`state/lore.db`): abilities and their changes, raw observations, claims, status per band |
+| trials | `churn.py`, `hunt.py` | Stress: bots create and quit, or fight one mob, until xania crashes |
+| report | `dispatch.py` | The dispatch website: findings, runs, bots, predicted vs seen |
+
+The `setup` layer (levels, gear kits, skill loadouts) is next; `scenarios/` holds the live regression suite.
 
 ## Roadmap
 

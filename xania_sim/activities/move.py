@@ -19,8 +19,8 @@ from dataclasses import dataclass, field
 from xania_explorer import api
 from xania_explorer.areafile import flags as F
 
-from .rooms import Fingerprints, RoomView, parse_view
-from .session import Bot, Response
+from xania_sim.record.rooms import Fingerprints, RoomView, parse_view
+from xania_sim.core.session import Bot, Response
 
 RECALL = api.RECALL_ROOM
 AIR, DEEP_WATER = F.SECTORS.index("Air"), F.SECTORS.index("NonSwimmableWater")
@@ -251,7 +251,7 @@ class Navigator:
     async def _rest_until(self, share: float = 0.9, timeout: float | None = None) -> None:
         """Sleep until moves are back to ``share`` of max (regen comes on ticks; sleeping adds the full Dex bonus to
         move regen, resting half: update.cpp move_gain). If something attacks meanwhile, wake and escape."""
-        from .fight import attacked
+        from xania_sim.activities.fight import attacked
 
         r = await self.bot.do("sleep", expect=POSITION_REPLY + "|You are already fighting")
         loop = asyncio.get_running_loop()

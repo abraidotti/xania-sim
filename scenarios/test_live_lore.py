@@ -2,9 +2,9 @@
 
 import pytest
 
-from xania_sim.repo import GameRepo
-from xania_sim.scan import crosscheck, parse_ability_list, scan_source
-from xania_sim.session import Profile
+from xania_sim.core.repo import GameRepo
+from xania_sim.record.scan import crosscheck, parse_ability_list, scan_source
+from xania_sim.core.session import Profile
 
 
 @pytest.fixture(scope="module")

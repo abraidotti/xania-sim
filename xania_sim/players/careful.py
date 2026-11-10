@@ -16,9 +16,9 @@ from dataclasses import dataclass, field
 
 from xania_explorer import api
 
-from .fight import FLEE_AT, SAFE_SHARE, FightLog, FightResult, MobIndex, REST_BELOW, fight, recover, safe_targets
-from .nav import ROOM_REPLY, Navigator, danger_rooms
-from .session import Bot
+from xania_sim.activities.fight import FLEE_AT, SAFE_SHARE, FightLog, FightResult, MobIndex, REST_BELOW, fight, recover, safe_targets
+from xania_sim.activities.move import ROOM_REPLY, Navigator, danger_rooms
+from xania_sim.core.session import Bot
 
 LEVEL = re.compile(r"Level:?\s+(\d+)")
 TOGGLES = {"autogold": ("Automatic gold looting set", "Autogold removed"),
@@ -114,8 +114,8 @@ class Leveller:
     async def train(self) -> None:
         if not self.practise_skills:
             return
-        from .nav import NavError
-        from .trainer import practise
+        from xania_sim.activities.move import NavError
+        from xania_sim.activities.practice import practise
 
         try:
             self.last_practice = await practise(self.bot, self.nav, self.world, self.cls)

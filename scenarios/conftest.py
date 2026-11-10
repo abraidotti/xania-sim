@@ -12,11 +12,11 @@ from pathlib import Path
 import pytest
 import pytest_asyncio
 
-from xania_sim import world as W
-from xania_sim.findings import Finding, bug_line_findings, crash_finding, transcript_tails
-from xania_sim.names import bot_names, mob_words
-from xania_sim.server import TestMud
-from xania_sim.session import Bot, Profile
+from xania_sim.core import world as W
+from xania_sim.record.findings import Finding, bug_line_findings, crash_finding, transcript_tails
+from xania_sim.core.names import bot_names, mob_words
+from xania_sim.core.server import TestMud
+from xania_sim.core.session import Bot, Profile
 
 RUNS = Path(__file__).resolve().parents[1] / "runs" / time.strftime("%Y%m%d-%H%M%S")
 
@@ -57,9 +57,9 @@ def _record_session() -> None:
     """The session as a run in the lore database, with its findings (XANIA_SIM_RECORD=0 to skip)."""
     if os.environ.get("XANIA_SIM_RECORD", "1") == "0":
         return
-    from xania_sim.findings import Journal
-    from xania_sim.repo import GameRepo
-    from xania_sim.store import Lore
+    from xania_sim.record.findings import Journal
+    from xania_sim.core.repo import GameRepo
+    from xania_sim.record.store import Lore
 
     v = GameRepo().version()
     lore = Lore()

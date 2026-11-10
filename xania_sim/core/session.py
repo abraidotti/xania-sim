@@ -14,8 +14,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import parsers as P
-from .telnet import Closed, Connection, Timeout
+from xania_sim.core import parsers as P
+from xania_sim.core.telnet import Closed, Connection, Timeout
 
 
 class LoginError(Exception):

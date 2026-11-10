@@ -1,4 +1,4 @@
-from xania_sim.telnet import DO, DONT, IAC, SB, SE, WILL, WONT, strip_telnet
+from xania_sim.core.telnet import DO, DONT, IAC, SB, SE, WILL, WONT, strip_telnet
 
 TTYPE, NAWS, ECHO = 24, 31, 1
 

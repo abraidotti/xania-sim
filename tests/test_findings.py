@@ -4,9 +4,9 @@ import json
 
 import pytest
 
-from xania_sim import dispatch as D
-from xania_sim.findings import Journal, bug_line_findings, crash_finding, project_frames
-from xania_sim.store import Lore
+from xania_sim.report import dispatch as D
+from xania_sim.record.findings import Journal, bug_line_findings, crash_finding, project_frames
+from xania_sim.record.store import Lore
 
 # From a real hunt (trimmed): autoloot's "get all corpse" reading past the end of "all"
 AUTOLOOT = """2026-11-09 04:30:13Z :: TICK
@@ -93,7 +93,7 @@ def test_the_dispatch_site_is_built_and_escaped(journal, tmp_path):
 def test_an_address_sanitizer_report_becomes_a_finding():
     from pathlib import Path
 
-    from xania_sim.findings import asan_stacks, crash_finding
+    from xania_sim.record.findings import asan_stacks, crash_finding
 
     report = (Path(__file__).parent / "asan_report.txt").read_text(encoding="utf-8")  # a real one, 2026-11-09
     f = crash_finding(report, "python -m pytest scenarios")

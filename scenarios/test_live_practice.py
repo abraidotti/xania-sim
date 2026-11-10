@@ -1,9 +1,9 @@
 """Practice on the real MUD: a new knight finds a practice mob near the temple and spends its sessions."""
 
-from xania_sim.nav import Navigator
-from xania_sim.rooms import Fingerprints
-from xania_sim.session import Profile
-from xania_sim.trainer import practise
+from xania_sim.activities.move import Navigator
+from xania_sim.record.rooms import Fingerprints
+from xania_sim.core.session import Profile
+from xania_sim.activities.practice import practise
 
 
 async def test_new_knight_practises(new_bot, world):

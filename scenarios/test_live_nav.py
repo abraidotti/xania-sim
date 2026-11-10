@@ -3,8 +3,8 @@
 import pytest
 
 from xania_explorer import api
-from xania_sim.nav import Navigator, danger_rooms
-from xania_sim.rooms import Fingerprints
+from xania_sim.activities.move import Navigator, danger_rooms
+from xania_sim.record.rooms import Fingerprints
 
 
 @pytest.fixture(scope="module")

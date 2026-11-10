@@ -21,9 +21,9 @@ import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from .scan import AbilityFacts
+from xania_sim.record.scan import AbilityFacts
 
-DEFAULT_PATH = Path(__file__).resolve().parents[1] / "state" / "lore.db"
+DEFAULT_PATH = Path(__file__).resolve().parents[2] / "state" / "lore.db"
 BAND_WIDTH = 10
 KNOWN_AFTER = 5  # observations in a band on the current code before an ability counts as known there
 CLAIM_SECONDS = 15 * 60

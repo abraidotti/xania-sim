@@ -3,8 +3,8 @@ retire it) once a fix makes the crash go away. Bot defaults that work around the
 
 import asyncio
 
-from xania_sim.findings import crash_finding
-from xania_sim.session import Bot, Profile
+from xania_sim.record.findings import crash_finding
+from xania_sim.core.session import Bot, Profile
 
 
 async def _crashes_after(mud, bot, command) -> bool:

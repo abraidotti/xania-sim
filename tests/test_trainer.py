@@ -1,6 +1,6 @@
 """Practice: the table from do_practice, and what a class spends its sessions on."""
 
-from xania_sim.trainer import ENOUGH, parse_table, plan
+from xania_sim.activities.practice import ENOUGH, parse_table, plan
 
 TABLE = ("axe                  1%  dagger              40%  flail                1%\n"
          "mace                 1%  polearm              1%  shield block         1%\n"

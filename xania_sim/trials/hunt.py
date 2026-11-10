@@ -15,13 +15,13 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import world as W
-from .findings import bug_line_findings, crash_finding, transcript_tails
-from .names import bot_names, mob_words
-from .nav import Navigator
-from .rooms import Fingerprints
-from .server import TestMud
-from .session import Bot, Profile
+from xania_sim.core import world as W
+from xania_sim.record.findings import bug_line_findings, crash_finding, transcript_tails
+from xania_sim.core.names import bot_names, mob_words
+from xania_sim.activities.move import Navigator
+from xania_sim.record.rooms import Fingerprints
+from xania_sim.core.server import TestMud
+from xania_sim.core.session import Bot, Profile
 
 CLASSES = ["mage", "cleric", "knight", "barbarian"]
 FIGHT_OVER = ("is DEAD", "You have been KILLED", "You flee", "You aren't fighting")
@@ -116,9 +116,9 @@ async def hunt(mob: str, bots: int = 4, minutes: float = 10, port: int = 9100, r
 
 
 def _record(title: str, found: list, **summary) -> None:
-    from .findings import Journal
-    from .repo import GameRepo
-    from .store import Lore
+    from xania_sim.record.findings import Journal
+    from xania_sim.core.repo import GameRepo
+    from xania_sim.record.store import Lore
 
     v = GameRepo().version()
     lore = Lore()

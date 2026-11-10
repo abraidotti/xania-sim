@@ -16,7 +16,7 @@ from __future__ import annotations
 import re
 import shlex
 
-from .session import Bot, Profile
+from xania_sim.core.session import Bot, Profile
 
 LEVEL = 100  # Constants.hpp IMPLEMENTOR
 NAME = "Directrix"
@@ -127,7 +127,7 @@ def _keyword(vnum: int) -> str:
     """The first keyword of an object, from the area files the test MUD loads."""
     global _WORLD
     if _WORLD is None:
-        from . import world as W
+        from xania_sim.core import world as W
 
         _WORLD = W.load()
     obj = _WORLD.objects.get(vnum) if hasattr(_WORLD, "objects") else None

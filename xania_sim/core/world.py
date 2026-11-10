@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from .server import checkout_path
+from xania_sim.core.server import checkout_path
 
 
 @lru_cache(maxsize=None)

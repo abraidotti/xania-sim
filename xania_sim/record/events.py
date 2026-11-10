@@ -23,7 +23,7 @@ import re
 import time
 from dataclasses import dataclass, field
 
-from .parsers import Prompt
+from xania_sim.core.parsers import Prompt
 
 SNAPSHOT_EVERY = 60.0
 CLOSE_CALL = 0.2  # HP share (alive) recorded as a close call, once until HP is back above REARM

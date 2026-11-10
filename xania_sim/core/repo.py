@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 
-from .server import XANIA, checkout_path, run_bash
+from xania_sim.core.server import XANIA, checkout_path, run_bash
 
 
 @dataclass(frozen=True)

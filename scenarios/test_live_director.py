@@ -1,11 +1,12 @@
 """The director: an immortal on the test MUD that levels bots, sets skills and hands out gear."""
 
+import re
 
 import pytest
 
-from xania_sim.director import Director
-from xania_sim.server import TestMud
-from xania_sim.session import Bot, Profile
+from xania_sim.core.director import Director
+from xania_sim.core.server import TestMud
+from xania_sim.core.session import Bot, Profile
 
 pytestmark = pytest.mark.live
 

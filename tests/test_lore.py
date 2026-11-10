@@ -2,8 +2,8 @@
 
 import pytest
 
-from xania_sim.scan import AbilityFacts, function_bodies, normalise, parse_ability_list, skill_entries
-from xania_sim.store import KNOWN_AFTER, Lore, band_of
+from xania_sim.record.scan import AbilityFacts, function_bodies, normalise, parse_ability_list, skill_entries
+from xania_sim.record.store import KNOWN_AFTER, Lore, band_of
 
 TABLE = '''
 const struct skill_type skill_table[MAX_SKILL] = {

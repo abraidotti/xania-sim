@@ -4,14 +4,14 @@ shared fight log) call safe, without dying. Its events go into the shared event 
 
 import pytest
 
-from xania_sim import world as W
-from xania_sim.events import Progress, Recorder
-from xania_sim.fight import FightLog, MobIndex
-from xania_sim.level import Leveller
-from xania_sim.nav import Navigator
-from xania_sim.rooms import Fingerprints
-from xania_sim.session import Profile
-from xania_sim.store import Lore
+from xania_sim.core import world as W
+from xania_sim.record.events import Progress, Recorder
+from xania_sim.activities.fight import FightLog, MobIndex
+from xania_sim.players.careful import Leveller
+from xania_sim.activities.move import Navigator
+from xania_sim.record.rooms import Fingerprints
+from xania_sim.core.session import Profile
+from xania_sim.record.store import Lore
 
 
 @pytest.mark.slow

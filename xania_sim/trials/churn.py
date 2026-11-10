@@ -15,11 +15,11 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import world as W
-from .names import bot_names, mob_words
-from .server import TestMud
-from .session import Bot, LoginError, Profile
-from .telnet import Closed, Timeout
+from xania_sim.core import world as W
+from xania_sim.core.names import bot_names, mob_words
+from xania_sim.core.server import TestMud
+from xania_sim.core.session import Bot, LoginError, Profile
+from xania_sim.core.telnet import Closed, Timeout
 
 
 @dataclass
@@ -71,9 +71,9 @@ async def churn(bots: int = 6, minutes: float = 15, port: int = 9100, record: bo
             rep.report_path = runs / "xania-crash.txt"
             rep.report_path.write_text(rep.report, encoding="utf-8")
     if rep.crashed and record:
-        from .findings import Journal, crash_finding
-        from .repo import GameRepo
-        from .store import Lore
+        from xania_sim.record.findings import Journal, crash_finding
+        from xania_sim.core.repo import GameRepo
+        from xania_sim.record.store import Lore
 
         v = GameRepo().version()
         lore = Lore()

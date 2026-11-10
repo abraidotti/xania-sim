@@ -3,7 +3,7 @@
 import pytest
 
 from fake_mud import FakeMud
-from xania_sim.session import Bot, LoginError, Profile
+from xania_sim.core.session import Bot, LoginError, Profile
 
 
 async def test_creates_a_character_and_sets_the_prompt(tmp_path):

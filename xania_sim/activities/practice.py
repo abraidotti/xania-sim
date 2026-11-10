@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 
 from xania_explorer import api
 
-from .nav import Navigator
+from xania_sim.activities.move import Navigator
 
 ENOUGH = 75  # stop practising a skill at this percentage (the rest comes from use)
 TABLE = re.compile(r"([a-z][a-z' ]*?[a-z])\s+(\d{1,3})%")

@@ -1,7 +1,7 @@
 import pytest
 
-from xania_sim import parsers as P
-from xania_sim.names import bot_names, name_problem
+from xania_sim.core import parsers as P
+from xania_sim.core.names import bot_names, name_problem
 
 
 def test_prompt_format_round_trips():

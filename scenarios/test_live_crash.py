@@ -4,8 +4,8 @@ import asyncio
 
 import pytest
 
-from xania_sim.server import BACKTRACE_MARKER
-from xania_sim.session import Bot, Profile
+from xania_sim.core.server import BACKTRACE_MARKER
+from xania_sim.core.session import Bot, Profile
 
 
 async def test_a_crash_leaves_a_backtrace_and_the_mud_comes_back(mud, names):

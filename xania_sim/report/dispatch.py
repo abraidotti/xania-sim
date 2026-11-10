@@ -22,7 +22,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from .findings import Journal
+from xania_sim.record.findings import Journal
 
 TITLE = "Xania Sim dispatch"
 WORKFLOW = "dispatch.yml"

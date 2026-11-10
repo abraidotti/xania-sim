@@ -4,8 +4,8 @@ from types import SimpleNamespace as NS
 
 import pytest
 
-from xania_sim.fight import BAD_RATE, MIN_FIGHTS, FightLog, FightResult, MobIndex
-from xania_sim.store import Lore
+from xania_sim.activities.fight import BAD_RATE, MIN_FIGHTS, FightLog, FightResult, MobIndex
+from xania_sim.record.store import Lore
 
 
 def _mob(vnum, keywords, short, long):
