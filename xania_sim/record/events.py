@@ -84,7 +84,73 @@ RULES: list[tuple[str, re.Pattern, object]] = [
     ("follow", re.compile(r"^You now follow (?P<who>.+?)\.$"), lambda m: {"who": m["who"], "dir": "out"}),
     ("group", re.compile(r"^(?P<who>.+?) joins your group\.$"), lambda m: {"who": m["who"], "leader": "you"}),
     ("group", re.compile(r"^You join (?P<who>.+?)'s group\.$"), lambda m: {"who": "you", "leader": m["who"]}),
+    # --- the bot's own skills and spells (M9 tactics). ``ability`` lines say whether a use worked; ``damage`` lines
+    # (DamageMessages.cpp, from damage() via fight.cpp:699) say what an attack did. The recorder doesn't store these
+    # two (QUIET): tactics.Tactics folds them into one ``tactic`` event per use, with the mana and lag it cost.
+    # magic.cpp:637, 627 (do_cast)
+    ("ability", re.compile(r"^You lost your concentration\.$"), lambda m: {"ok": False, "why": "concentration"}),
+    ("ability", re.compile(r"^You don't have enough mana\.$"), lambda m: {"ok": False, "why": "mana"}),
+    # fight.cpp:1755, 1769 (do_bash; 1942 is do_trip on oneself)
+    ("ability", re.compile(r"^You slam into (?P<who>.+?), and send \w+ flying!$"),
+     lambda m: {"name": "bash", "ok": True, "victim": m["who"]}),
+    ("ability", re.compile(r"^You fall flat on your face!$"), lambda m: {"name": "bash", "ok": False, "fell": True}),
+    # fight.cpp:1975 (do_trip)
+    ("ability", re.compile(r"^You trip (?P<who>.+?) and .+? goes down!$"),
+     lambda m: {"name": "trip", "ok": True, "victim": m["who"]}),
+    # fight.cpp:1879 (do_dirt: told to the room, the kicker included)
+    ("ability", re.compile(r"^(?P<who>.+?) is blinded by the dirt in \w+ eyes!$"),
+     lambda m: {"name": "dirt kicking", "ok": True, "victim": m["who"]}),
+    # fight.cpp:1583, 2466, 1576 (do_disarm / disarm)
+    ("ability", re.compile(r"^You disarm (?P<who>.+?)!$"), lambda m: {"name": "disarm", "ok": True, "victim": m["who"]}),
+    ("ability", re.compile(r"^You fail to disarm (?P<who>.+?)\.$"),
+     lambda m: {"name": "disarm", "ok": False, "victim": m["who"]}),
+    ("ability", re.compile(r"^\w+ weapon won't budge!$"), lambda m: {"name": "disarm", "ok": False}),
+    # fight.cpp:1642, 1675 (do_berserk)
+    ("ability", re.compile(r"^Your pulse races as you are consumed by rage!"), lambda m: {"name": "berserk", "ok": True}),
+    ("ability", re.compile(r"^Your pulse speeds up, but nothing happens\.$"), lambda m: {"name": "berserk", "ok": False}),
+    # fight.cpp:2234, 2229 (do_rescue)
+    ("ability", re.compile(r"^You rescue (?P<who>.+?)!$"), lambda m: {"name": "rescue", "ok": True, "ally": m["who"]}),
+    ("ability", re.compile(r"^You fail the rescue\.$"), lambda m: {"name": "rescue", "ok": False}),
+    # fight.cpp:2318 (do_headbutt)
+    ("ability", re.compile(r"^(?P<who>.+?) dodges your headbutt\. You feel disoriented\.$"),
+     lambda m: {"name": "headbutt", "ok": False, "victim": m["who"]}),
+    # DamageMessages.cpp:315 (immune), 323-325 (to_char: the amount is shown from level 20, make_damage_amount_label)
+    ("damage", re.compile(r"^(?P<who>.+?) is unaffected by your (?P<attack>.+?)!$"),
+     lambda m: {"attack": m["attack"], "victim": m["who"], "amount": 0, "immune": True}),
 ]
+
+# DamageMessages.cpp:26-180 (dam_proportion_verbs_table), pluralised as ImpactVerbs::create does (DamageMessages.cpp:
+# 255-273): what a hit "does" to its victim, from a miss up to ERADICATES
+_IMPACT_VERBS = (
+    "miss scrape touch brush taint scratch bruise hurt sicken entangle graze sting cool jolt gnaw nauseate stir "
+    "dismiss hit scald chill zap ail smolder cut blister ice shock intoxicate torment pain injure burn frost stun "
+    "contaminate palpitate wound torch freeze electrify boil corrupt torture split sizzle solidify electrocute combust "
+    "defile agonize gash frazzle crackle deteriorate crush purge shred shatter crisp perforate befoul cleanse maul "
+    "bake crystalize dissipate smash pacify decimate grill scorch splutter blacken purify eviscerate roast sear "
+    "frizzle curse interrogate devastate cook splatter ruin redeem maim char enslave sanctify MUTILATE BRAND FREEZE "
+    "ELECTRIFY DISSOLVE VITRIFY DISEMBOWEL MELT ELECTROCUTE PURGE DISMEMBER ENGULF CAUTERIZE DECOMPOSE CRUCIFY "
+    "MASSACRE NUKE DISINTEGRATE CONDEMN MANGLE ATOMIZE DEMOLISH DEVASTATE OBLITERATE ANNIHILATE ERADICATE").split()
+
+
+def _plural(verb: str) -> str:
+    last = verb[-1]
+    if last in "yY":
+        return verb[:-1] + ("IES" if last.isupper() else "ies")
+    if last in "hsxHSX":
+        return verb + ("ES" if last.isupper() else "es")
+    return verb + ("S" if last.isupper() else "s")
+
+
+_IMPACTS = sorted({_plural(v) for v in _IMPACT_VERBS}, key=len, reverse=True) + ["does UNSPEAKABLE things to"]
+# "Your kick hits the goblin's leg. (12)"; big hits are framed "***  MUTILATES  ***" / "<<<  ...  >>>"
+# (make_prefix_suffix, DamageMessages.cpp:198-211; with colour off only the frame is left)
+RULES.append(("damage", re.compile(r"^Your (?P<attack>[\w' ]+?) (?:\*\*\*  |<<<  )?(?P<impact>" + "|".join(_IMPACTS)
+                                   + r")(?:  \*\*\*|  >>>)? (?P<who>.+?)'s (?P<part>[^.!]+)[.!](?: \((?P<n>\d+)\))?$"),
+              lambda m: {"attack": m["attack"], "victim": m["who"], "amount": int(m["n"] or 0),
+                         "missed": m["impact"] == "misses" and not m["n"]}))
+# (a small hit can read "misses" yet carry an amount: the proportion is damage * 100 / max HP in integers plus a
+# random 0..level/5, and 0 is the "miss" row: DamageMessages.cpp:183-195)
+QUIET = {"ability", "damage"}  # parsed for tactics, folded into "tactic" events rather than stored line by line
 
 
 # who's hitting the bot: "The small spider's slash splits your head." / "...'s trip misses your left shin." (the bot's
@@ -168,6 +234,8 @@ class Recorder:
         area = self.area_of(room) if room is not None else None
         rows = []
         for e in events:
+            if e.kind in QUIET:
+                continue
             data = dict(e.data)
             if e.kind == "level":
                 self.level += 1
@@ -195,6 +263,15 @@ class Recorder:
             if prompt is not None and (force or (prompt != self._last_prompt and now - self._last_snap >= SNAPSHOT_EVERY)):
                 self._snapshot(prompt, now, room)
         return events
+
+    def record(self, kind: str, data: dict) -> None:
+        """Store an event the bot's behaviour derived itself (e.g. a ``tactic``: one skill or spell use, with what it
+        cost and did), with the same bot, time, room and area as parsed ones."""
+        now, room = self.clock(), self.room()
+        area = self.area_of(room) if room is not None else None
+        with self.db:
+            self.db.execute("INSERT INTO events (bot, at, kind, room, area, run_id, data) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            (self.bot.name, now, kind, room, area, self.run_id, json.dumps(data)))
 
     def snapshot(self) -> None:
         """Snapshot now (e.g. on login and logout)."""

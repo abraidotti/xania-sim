@@ -103,6 +103,8 @@ class FightResult:
     xp: int
     levelled: bool
     text: str
+    mana_before: int = 0
+    mana_after: int = 0
 
 
 class FightLog:
@@ -139,9 +141,10 @@ class FightLog:
         return len(rows), bad, lost
 
 
-def safe_targets(world, cls: str, level: int, log: FightLog | None = None) -> dict[int, float]:
+def safe_targets(world, cls: str, level: int, log: FightLog | None = None, caster: bool = False) -> dict[int, float]:
     """Mobs worth fighting at this level, by expected xp per round: predicted to cost under SAFE_SHARE of HP (or
-    proven safe by enough observed wins), and never ones that observations show beating bots of this band."""
+    proven safe by enough observed wins), and never ones that observations show beating bots of this band.
+    ``caster``: the bot buffs itself and casts its attack spells (tactics on), as in Explorer's caster model."""
     from xania_explorer.assess import combat as CB
 
     out = {}
@@ -149,7 +152,7 @@ def safe_targets(world, cls: str, level: int, log: FightLog | None = None) -> di
         if not level - 4 <= m.mob.level <= level + 3 or m.info.population <= 0:
             continue
         try:
-            f = api.predict_fight(world, cls, level, m.mob.vnum)
+            f = api.predict_fight(world, cls, level, m.mob.vnum, caster=caster)
         except (KeyError, ValueError):
             continue
         safe = not f.deadly and f.hp_lost_share < SAFE_SHARE and f.rounds != float("inf") and f.xp > 0
@@ -164,17 +167,36 @@ def safe_targets(world, cls: str, level: int, log: FightLog | None = None) -> di
     return out
 
 
+async def _open(bot: Bot, keyword: str, tactics) -> Response:
+    """The first blow: the tactics' opener (backstab, an attack spell), or ``kill`` if there's none or it was refused
+    (e.g. "hurt and suspicious", fight.cpp:2127)."""
+    if tactics is not None:
+        act = tactics.opener(bot.prompt)
+        if act.kind != "melee":
+            use = await tactics.perform(bot, act)
+            if use.ok is not None or KILLED in use.text or DEAD.search(use.text):
+                return Response(act.command, use.text, bot.prompt)
+            if NOT_HERE.search(use.text) and "They aren't here" in use.text:
+                return Response(act.command, use.text, bot.prompt)
+    return await bot.do(f"kill {keyword}", expect=r"\w", timeout=5)
+
+
 async def fight(bot: Bot, mob: int, keyword: str, flee_at: float = FLEE_AT, escape=None,
-                round_timeout: float = 9) -> FightResult:
+                round_timeout: float = 9, tactics=None) -> FightResult:
     """Attack and follow the fight to its end through the prompts it produces. ``escape`` (e.g. Navigator.escape)
-    is awaited when HP falls below ``flee_at``."""
+    is awaited when HP falls below ``flee_at``. With ``tactics`` (tactics.Tactics) the bot opens with its best
+    opener and uses skills and spells between rounds; fleeing stays as it is, and is checked first every round."""
     p0 = bot.prompt
-    r = await bot.do(f"kill {keyword}", expect=r"\w", timeout=5)
+    if tactics is not None:
+        tactics.begin(mob, keyword)
+    r = await _open(bot, keyword, tactics)
     text, rounds = r.text, 0
-    if NOT_HERE.search(r.text):
-        return FightResult(mob, "absent", 0, p0.hp, bot.prompt.hp, bot.prompt.max_hp, 0, False, text)
+    if NOT_HERE.search(r.text) and not DEAD.search(r.text):
+        return FightResult(mob, "absent", 0, p0.hp, bot.prompt.hp, bot.prompt.max_hp, 0, False, text,
+                           p0.mana, bot.prompt.mana)
     outcome = "ended"
     last_hp, worst_round = p0.hp, 0
+    acted = False  # whether the last pass through the loop used a skill (then the round still has to come)
     while True:
         if KILLED in text:
             outcome = "died"
@@ -196,6 +218,14 @@ async def fight(bot: Bot, mob: int, keyword: str, flee_at: float = FLEE_AT, esca
                 r = await bot.do("flee", expect=r"flee|PANIC|aren't fighting|stunned|KILLED")
                 outcome = "died" if KILLED in r.text else "fled"
             break
+        if tactics is not None and not acted:
+            act = tactics.choose(bot.prompt, flee_at, ally_hit(text[-600:], tactics))
+            if act is not None:
+                use = await tactics.perform(bot, act)
+                text += use.text
+                acted = True
+                continue  # check for a death, and the flee line, before waiting on the next round
+        acted = False
         heard = await bot.listen(round_timeout)
         if not heard.complete:
             break  # no rounds for a while: the fight is over (or never started)
@@ -204,7 +234,16 @@ async def fight(bot: Bot, mob: int, keyword: str, flee_at: float = FLEE_AT, esca
         if KNOCKED.search(heard.text):
             text += (await bot.do("stand", expect=REST_REPLY)).text  # keep any round that arrives meanwhile
     xp = sum(int(x) for x in XP.findall(text))
-    return FightResult(mob, outcome, rounds, p0.hp, bot.prompt.hp, bot.prompt.max_hp, xp, LEVEL_UP in text, text)
+    return FightResult(mob, outcome, rounds, p0.hp, bot.prompt.hp, bot.prompt.max_hp, xp, LEVEL_UP in text, text,
+                       p0.mana, bot.prompt.mana)
+
+
+def ally_hit(text: str, tactics) -> str | None:
+    if not tactics.group:
+        return None
+    from xania_sim.activities.tactics import ally_in_trouble
+
+    return ally_in_trouble(text, tactics.group)
 
 
 REST_REPLY = r"^You (rest|sit down|stand up|stop resting|wake|are already|go to sleep|can't)|^You're |Nah"

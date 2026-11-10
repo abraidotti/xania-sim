@@ -18,6 +18,7 @@ from xania_explorer import api
 
 from xania_sim.activities.fight import FLEE_AT, SAFE_SHARE, FightLog, FightResult, MobIndex, REST_BELOW, fight, recover, safe_targets
 from xania_sim.activities.move import ROOM_REPLY, Navigator, danger_rooms
+from xania_sim.activities.tactics import BUFFS
 from xania_sim.core.session import Bot
 
 LEVEL = re.compile(r"Level:?\s+(\d+)")
@@ -48,8 +49,9 @@ async def set_toggle(bot: Bot, command: str, on: bool) -> None:
 
 class Leveller:
     def __init__(self, bot: Bot, world, cls: str, nav: Navigator | None = None, log: FightLog | None = None,
-                 mobs: MobIndex | None = None, recorder=None):
+                 mobs: MobIndex | None = None, recorder=None, tactics=None):
         self.bot, self.world, self.cls = bot, world, cls
+        self.tactics = tactics  # tactics.Tactics: buffs before each sweep, skills and spells in fights
         self.recorder = recorder  # events.Recorder: told the target of each fight and the level after each check
         self.nav = nav or Navigator(bot, world)
         self.log, self.mobs = log, mobs or MobIndex(world)
@@ -69,8 +71,14 @@ class Leveller:
 
     def targets(self, level: int) -> dict[int, float]:
         if level not in self._targets:
-            self._targets[level] = safe_targets(self.world, self.cls, level, self.log)
+            self._targets[level] = safe_targets(self.world, self.cls, level, self.log, caster=self.caster)
         return self._targets[level]
+
+    @property
+    def caster(self) -> bool:
+        """Whether target choice may count on buffs and attack spells (Explorer's caster model)."""
+        t = self.tactics
+        return t is not None and bool(t.attack_spells(None) or any(t.knows(b) for b in BUFFS))
 
     def spawns(self) -> dict[int, list[int]]:
         if self._spawns is None:
@@ -112,15 +120,16 @@ class Leveller:
     practise_skills = True  # spend practice sessions at the nearest guildmaster at the start and after each level
 
     async def train(self) -> None:
-        if not self.practise_skills:
-            return
         from xania_sim.activities.move import NavError
         from xania_sim.activities.practice import practise
 
-        try:
-            self.last_practice = await practise(self.bot, self.nav, self.world, self.cls)
-        except NavError:
-            await self.nav.locate()
+        if self.practise_skills:
+            try:
+                self.last_practice = await practise(self.bot, self.nav, self.world, self.cls)
+            except NavError:
+                await self.nav.locate()
+        if self.tactics is not None:
+            await self.tactics.refresh(self.bot)  # new percentages, and what the new level brought
 
     async def run(self, goal_level: int, budget: float = 1800, stop=None) -> LevelReport:
         """Level until ``goal_level``, ``budget`` seconds, or ``stop()`` turns true (checked between fights)."""
@@ -147,6 +156,8 @@ class Leveller:
             if level not in self._danger:
                 self._danger[level] = danger_rooms(self.world, level, self.cls)
             self.nav.avoid = self._danger[level] | self.never
+            if self.tactics is not None:
+                await self.tactics.prepare(self.bot)  # buffs before choosing a fight
             targets = self.targets(level)
             if not targets:
                 rep.reason = f"no safe targets at level {level}"
@@ -167,7 +178,8 @@ class Leveller:
                 here = self.nav.here
                 if self.recorder is not None:
                     self.recorder.target = self.world.mobs[mob].short_descr
-                r = await fight(self.bot, mob, self.mobs.keyword(mob), flee_at=self.flee_at, escape=self.nav.escape)
+                r = await fight(self.bot, mob, self.mobs.keyword(mob), flee_at=self.flee_at, escape=self.nav.escape,
+                                tactics=self.tactics)
                 if r.outcome == "absent":
                     continue
                 fought = True
@@ -190,6 +202,8 @@ class Leveller:
                 if r.levelled:
                     level = await self.level()
                     rep.level = level
+                    if self.tactics is not None:
+                        self.tactics.level = level
                     await self.train()
                 self._targets.pop(level, None)  # observations changed: recompute this level's targets
                 break
