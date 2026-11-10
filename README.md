@@ -210,7 +210,8 @@ Long trials guard their own time:
   ("looping at room 3001").
 - **Crash watcher:** xania is checked every 5 s while bots play.
 - **Verdicts:** every level gets one, `ok: 5 kills` or `unproductive: no kills; escapes fled 5; 1 cut off`.
-  `--fail-fast` stops the trial after an unproductive level.
+  `--fail-fast` stops the trial after an unproductive level inside the area's range (outside it, an empty level is
+  expected).
 - **Preflight:** `--quick` runs one class at the first level for 1.5 minutes, to check everything works before a
   long run.
 

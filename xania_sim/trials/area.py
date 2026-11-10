@@ -431,7 +431,8 @@ async def run_area(result, area: str, port: int = 9160, classes: list[str] | Non
                 beat("trial", f"done {label} ({level})", verdict=verdict)
                 if verdict.startswith("unproductive"):
                     result.outcomes.append(Outcome("area", False, f"{label} ({level}): {verdict}", [], {}))
-                    if fail_fast:
+                    lo, hi = plan.advertised or plan.span
+                    if fail_fast and lo <= level <= hi:  # outside its range, an empty level is expected
                         result.measurements["stopped_early"] = f"after {label}: {verdict}"
                         break
         finally:
