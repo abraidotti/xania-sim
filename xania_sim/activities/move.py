@@ -39,10 +39,11 @@ ASLEEP = re.compile(r"In your dreams, or what\?|Nah\.\.\. You feel too relaxed")
 
 # What each command's own reply looks like (Bot.do reads past unprompted output until one appears).
 ROOM_REPLY = r"^\[Exits:|It is pitch black|You can't see anything, you're sleeping"
-MOVE_REPLY = re.compile("|".join([ROOM_REPLY, BLOCKED.pattern, EXHAUSTED.pattern, FIGHTING.pattern, ASLEEP.pattern,
-                                  r"You can't move", r"You're too"]), re.M)
-OPEN_REPLY = r"^Ok\.|It's already open|It's locked|You can't do that|Open what|That's not a container"
+# resting, sitting or asleep: "You're resting. Try standing up first!" (a move refused until the bot stands)
 DOWN = re.compile(r"You're resting|You're sleeping|Try standing up|In your dreams|You're sitting")
+MOVE_REPLY = re.compile("|".join([ROOM_REPLY, BLOCKED.pattern, EXHAUSTED.pattern, FIGHTING.pattern, ASLEEP.pattern,
+                                  DOWN.pattern, r"You can't move", r"You're too"]), re.M)
+OPEN_REPLY = r"^Ok\.|It's already open|It's locked|You can't do that|Open what|That's not a container"
 RECALL_REPLY = re.compile(ROOM_REPLY + r"|You are completely lost|You are there already|has forsaken you|"
                           r"finish this fight first|You failed!|" + DOWN.pattern, re.M)
 POSITION_REPLY = r"^You (rest|sit down|stand up|stop resting|wake|are already|can't wake|go to sleep)|^You're "
@@ -75,9 +76,10 @@ class Coverage:
         return len(self.visited & set(self.rooms)) / len(self.rooms) if self.rooms else 1.0
 
 
-def danger_rooms(world, level: int, cls: str = "knight") -> set[int]:
+def danger_rooms(world, level: int, cls: str = "knight", caster: bool = False) -> set[int]:
     """Rooms where an aggressive mob that would attack a level-``level`` player spawns (aggr_update, update.cpp:
-    mob level >= player level - 5, not wimpy), unless the fight is predicted to cost under ``SAFE_SHARE`` of HP."""
+    mob level >= player level - 5, not wimpy), unless the fight is predicted to cost under ``SAFE_SHARE`` of HP.
+    ``caster``: the player fights with its spells and buffs (Explorer's caster model), as safe_targets does."""
     from xania_explorer.assess import mobs as M
 
     out: set[int] = set()
@@ -87,7 +89,7 @@ def danger_rooms(world, level: int, cls: str = "knight") -> set[int]:
         if "Aggressive" not in acts or "Wimpy" in acts or mob.level < level - 5:
             continue
         try:
-            f = api.predict_fight(world, cls, max(1, level), mob.vnum)
+            f = api.predict_fight(world, cls, max(1, level), mob.vnum, caster=caster)
             if not f.deadly and f.hp_lost_share < SAFE_SHARE:
                 continue
         except (KeyError, ValueError):
@@ -292,8 +294,8 @@ class Navigator:
             if EXHAUSTED.search(r.text):
                 await self._rest_until()
                 continue
-            if ASLEEP.search(r.text):
-                await self.bot.do("stand", expect=POSITION_REPLY)
+            if ASLEEP.search(r.text) or DOWN.search(r.text):  # asleep, resting or sitting: get up first
+                await self.stand()
                 continue
             break
         if FIGHTING.search(r.text):  # something attacked while the bot stood here

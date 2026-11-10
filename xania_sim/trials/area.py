@@ -47,6 +47,7 @@ from xania_sim.record.result import Outcome, known_statuses
 from xania_sim.record.rooms import Fingerprints
 
 HERO = 91  # the highest mortal level
+CASTERS = {"mage", "cleric"}  # classes whose careful players fight with spells (tactics.Tactics)
 TEMPLE = 3001
 CUT_DOWN_KEEP = ("Limbo.are", "Midgaard.are", "MudSchool.are")
 UNREACHED = {"no route", "blocked", "step limit"}  # walking failed where the map had a route
@@ -143,13 +144,14 @@ class Prediction:
 def predict(world, plan: AreaPlan, cls: str, level: int) -> Prediction:
     from xania_explorer.assess import combat as CB
 
-    safe = [m for m in safe_targets(world, cls, level) if m in plan.mobs]
+    caster = cls in CASTERS  # as the careful player judges fights: with its spells and buffs
+    safe = [m for m in safe_targets(world, cls, level, caster=caster) if m in plan.mobs]
     pop = deadly = 0
     for m in CB.analyse(world).mobs:
         if m.mob.vnum not in plan.mobs or m.info.population <= 0:
             continue
         try:
-            f = api.predict_fight(world, cls, level, m.mob.vnum)
+            f = api.predict_fight(world, cls, level, m.mob.vnum, caster=caster)
         except (KeyError, ValueError):
             continue
         pop += m.info.population
@@ -157,8 +159,8 @@ def predict(world, plan: AreaPlan, cls: str, level: int) -> Prediction:
     shares = []
     for m in safe:
         with contextlib.suppress(KeyError, ValueError):
-            shares.append(api.predict_fight(world, cls, level, m).hp_lost_share)
-    danger = len(danger_rooms(world, level, cls) & set(plan.rooms))
+            shares.append(api.predict_fight(world, cls, level, m, caster=caster).hp_lost_share)
+    danger = len(danger_rooms(world, level, cls, caster=caster) & set(plan.rooms))
     return Prediction(safe, deadly / pop if pop else 0.0, sum(shares) / len(shares) if shares else None, danger)
 
 
@@ -330,11 +332,11 @@ async def _session(run, bot, world, plan, minutes, log, nav, phases, beat, who) 
     nav.here = plan.entry
     await nav.locate()
     run.gold_start = bot.prompt.gold if bot.prompt else None
-    nav.avoid = danger_rooms(world, run.level, run.cls)
     tactics = await Tactics.read(bot, run.cls, run.level, world=world)
     # made before exploring: it answers ambushes on the way (fights back when that's safe)
     player = AreaPlayer(bot, world, run.cls, nav, log, MobIndex(world), tactics=tactics, plan=plan, run=run,
                         objects=Objects(world))
+    nav.avoid = danger_rooms(world, run.level, run.cls, caster=player.caster)
     await set_toggle(bot, "autosac", False)  # corpses from ambush fights are looted too
     beat(who, "exploring", rooms=len(plan.rooms), avoid=len(nav.avoid & set(plan.rooms)))
     with phases("explore"):

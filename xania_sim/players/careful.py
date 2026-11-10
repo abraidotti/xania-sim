@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from xania_explorer import api
 
 from xania_sim.activities.fight import FLEE_AT, SAFE_SHARE, FightLog, FightResult, MobIndex, REST_BELOW, fight, recover, safe_targets
-from xania_sim.activities.move import ROOM_REPLY, NavError, Navigator, danger_rooms
+from xania_sim.activities.move import AMBUSHED, ROOM_REPLY, NavError, Navigator, danger_rooms
 from xania_sim.activities.tactics import BUFFS
 from xania_sim.core.session import Bot
 
@@ -103,13 +103,15 @@ class Leveller:
         return sorted(reachable, key=lambda r: -value[r] / (1 + dist.get(r, 50) / 8))[:limit]
 
     def crowd_damage(self, mobs: list[int], level: int) -> float:
-        """Predicted HP lost if every mob in the room joins the fight (each one's straight-fight damage, summed)."""
+        """Predicted HP lost if every mob in the room joins the fight (each one's straight-fight damage, summed), with
+        the same model as target choice (caster or not: a mage judged as a melee fighter skipped every troll)."""
         total = 0.0
+        caster = self.caster
         for v in mobs:
-            key = (level, v)
+            key = (level, v, caster)
             if key not in self._damage:
                 try:
-                    self._damage[key] = api.predict_fight(self.world, self.cls, level, v).damage_taken
+                    self._damage[key] = api.predict_fight(self.world, self.cls, level, v, caster=caster).damage_taken
                 except (KeyError, ValueError):
                     self._damage[key] = 0.0  # not a fighter (shopkeepers, pets)
             total += self._damage[key]
@@ -184,7 +186,7 @@ class Leveller:
             if self.bot.prompt.hp_share < REST_BELOW:
                 await self.rest(timeout=max(30.0, left))
             if level not in self._danger:
-                self._danger[level] = danger_rooms(self.world, level, self.cls)
+                self._danger[level] = danger_rooms(self.world, level, self.cls, caster=self.caster)
             self.nav.avoid = self._danger[level] | self.never
             if self.tactics is not None:
                 await self.tactics.prepare(self.bot)  # buffs before choosing a fight
@@ -198,6 +200,10 @@ class Leveller:
                 if not walk.reached:
                     continue
                 look = await self.bot.do("look", expect=ROOM_REPLY)
+                if AMBUSHED.search(look.text):  # something's already fighting it: fight back or escape, then go on
+                    await self.ambushed(look.text)
+                    fought = True
+                    break
                 everyone = self.mobs.in_view(look.text, self.nav.here)
                 present = [v for v in everyone if v in targets]
                 if not present:

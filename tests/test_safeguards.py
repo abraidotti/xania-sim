@@ -134,3 +134,46 @@ def test_unrecorded_runs_still_know_known_findings(tmp_path, monkeypatch):
     assert res.exit_code() == 1  # the new one still fails the run
     res.findings = res.findings[:1]
     assert res.exit_code() == 0  # the known one alone doesn't
+
+
+def test_crowd_damage_uses_the_same_model_as_targets(monkeypatch):
+    """Targets came from Explorer's caster model but the crowd check from the melee one, so a level-15 mage saw two
+    trolls as 82 HP of risk (12 with its spells) and never attacked."""
+    from xania_sim.players import careful as C
+
+    seen = []
+
+    def predict_fight(world, cls, level, vnum, caster=False):
+        seen.append(caster)
+        return NS(damage_taken=6.0 if caster else 41.0)
+
+    monkeypatch.setattr(C.api, "predict_fight", predict_fight)
+    lev = C.Leveller(NS(prompt=NS(hp=106)), world=None, cls="mage", nav=NS(on_ambush=None, level=15), mobs=NS())
+    monkeypatch.setattr(C.Leveller, "caster", property(lambda self: True))
+    assert lev.crowd_damage([2804, 2805], 15) == 12.0 and seen == [True, True]
+
+
+def test_step_stands_up_from_resting():
+    """A resting bot's moves are refused ("You're resting. Try standing up first!"): stand, then move."""
+
+    class Bot:
+        name = "Restful"
+        prompt = NS(hp=10, max_hp=10)
+
+        def __init__(self):
+            self.sent = []
+
+        async def do(self, command, expect=None, timeout=10):
+            self.sent.append(command)
+            if command == "south" and "stand" not in self.sent:
+                return NS(text="You're resting. Try standing up first!")
+            if command == "stand":
+                return NS(text="You stand up.")
+            return NS(text="Square\n\nA square.\n[Exits: north]\n")
+
+    bot = Bot()
+    nav = Navigator(bot, world=NS(rooms={}))
+    nav.here = 1
+    nav.recognise = lambda view, expected=None: expected
+    ok = asyncio.run(nav.step(NS(command="south", door=False, from_vnum=1, to_vnum=2, direction=2)))
+    assert ok and bot.sent == ["south", "stand", "south"]
