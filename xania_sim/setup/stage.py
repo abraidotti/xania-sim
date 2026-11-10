@@ -24,6 +24,7 @@ from xania_sim.setup import kits as K
 from xania_sim.setup import loadouts as L
 from xania_sim.core.director import Director, DirectorError
 from xania_sim.core.session import Bot, Profile
+from xania_sim.activities.gear import parse_equipment
 from xania_sim.activities.practice import SESSIONS, parse_table
 
 STAGE_ROOM = 3001  # VnumRooms.hpp MidgaardTemple: lit, peaceful
@@ -35,7 +36,6 @@ WEAR_FAILED = re.compile(r"(You must be level \d+[^\n]*|You are zapped[^\n]*|It 
                          r"You can't wear, wield, or hold that[^\n]*|You do not have that item[^\n]*|"
                          r"You can't remove[^\n]*)")
 LEARNING_DRIFT = 5  # % a skill may gain by use between being set and being checked
-EQUIPMENT_LINE =re.compile(r"^<([^>]+)>\s+(.+?)\s*$", re.M)
 
 
 @dataclass
@@ -202,11 +202,6 @@ async def _check(bot: Bot, kit: K.Kit, loadout: L.Loadout, rep: StageReport) -> 
     r = await bot.do("practice", expect=SESSIONS)
     rep.practice, rep.practice_sessions = parse_table(r.text)
     rep.skill_mismatches = skill_mismatches(loadout.expected_practice(), rep.practice)
-
-
-def parse_equipment(text: str) -> list[tuple[str, str]]:
-    """[(location, item)] from ``equipment`` output."""
-    return [(m.group(1), m.group(2)) for m in EQUIPMENT_LINE.finditer(text)]
 
 
 def missing_pieces(pieces: list[K.Piece], equipment: list[tuple[str, str]]) -> list[K.Piece]:

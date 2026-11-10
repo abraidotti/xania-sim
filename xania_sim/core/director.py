@@ -105,10 +105,13 @@ class Director:
 
     async def bring(self, name: str) -> str:
         """Move ``name`` to the director's room."""
-        return await self.do(f"transfer {name}", expect=r"Ok\.|They aren't|arrives|You")
+        # act_wiz.cpp do_transfer: "Ok." to the immortal once the victim has arrived (and looked) (400)
+        return await self.do(f"transfer {name}", expect=re.compile(
+            r"^Ok\.$|They aren't here|They are in limbo|No such location|private right now|Transfer whom", re.M))
 
     async def goto(self, vnum: int | str) -> str:
-        return await self.do(f"goto {vnum}", expect=r"\n|No such")
+        # do_goto ends with look_auto: the room's exits line (or a refusal)
+        return await self.do(f"goto {vnum}", expect=r"\[Exits:|No such location|private right now|Goto where")
 
     async def restore(self, name: str = "all") -> str:
         return await self.do(f"restore {name}", expect=r"restored|Ok\.|They aren't")

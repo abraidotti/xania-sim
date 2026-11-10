@@ -199,6 +199,12 @@ tests. Other tools (Xania Builder, Xania Companions) build on the activities.
 | activities | `fight.py` | Recognising mobs in a room, `safe_targets`, `fight()` round by round, `recover()`, the shared `FightLog`, `compare` |
 | activities | `practice.py` | Practice: reads the practice table, picks skills by class priority, finds a practice mob |
 | activities | `tactics.py` | Skills and spells in fights: buffs first, an opener, the best action each round, a mana reserve kept for escape |
+| activities | `items.py` | Objects by the name the game shows: keyword, level, slots, how much they're worth wearing |
+| activities | `loot.py` | Looking in a corpse or container and taking what's in it, one item at a time (never `get all`: xania#1) |
+| activities | `gear.py` | Inventory, equipment, wearing and wielding, and putting on whatever beats what's worn, slot by slot |
+| activities | `trade.py` | Finding a shop, its stock, buying, selling, valuing |
+| activities | `group.py` | Following, grouping, reading the group, splitting gold |
+| activities | `death.py` | Dying, walking back from the altar and taking everything back from the right corpse |
 | players | `careful.py` | `Leveller`: the survival-first player: go where the safe fights are, fight one at a time, rest, flee |
 | players | `run.py` | The `level` command: one careful player for a while, recorded in the event log |
 | record | `events.py` | `parse(text)` into events, `Recorder` (watches a bot, stores events + snapshots), `Progress` (reads them) |
