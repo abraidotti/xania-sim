@@ -66,6 +66,7 @@ class AreaPlan:
     entry: int
     mobs: set[int]  # combat mob vnums that spawn in the area
     shops: list[int]  # shop rooms in the area
+    aggressive_rooms: set[int] = field(default_factory=set)  # area rooms where an aggressive mob spawns
 
 
 def levels_for(advertised: tuple[int, int] | None, median: int, span: tuple[int, int]) -> dict[str, int]:
@@ -102,8 +103,10 @@ def plan_area(world, area: str) -> AreaPlan:
     entry = min(doors, key=lambda s: dist[s.from_vnum]).to_vnum if doors else rooms[0]
     mobs = {i.mob.vnum for i in M.collect(world) if any(s.room_vnum in inside for s in i.spawns)}
     shops = sorted(r for r in T.shop_rooms(world) if r in inside)
+    aggressive = {s.room_vnum for i in M.collect(world) if "Aggressive" in i.mob.act_names
+                  for s in i.spawns if s.room_vnum in inside}
     return AreaPlan(a.name, a.filename, advertised, median, span, levels_for(advertised, median, span), rooms, entry,
-                    mobs, shops)
+                    mobs, shops, aggressive)
 
 
 def cut_down_list(world, filename: str) -> list[str]:
@@ -236,12 +239,13 @@ class AreaPlayer(Leveller):
         self.after_fight = self._after_fight
 
     async def rest(self, timeout: float = 900) -> None:
-        """Rest where it is when that's a safe room of the area (a far-off area makes the walk back from the temple
-        eat most of the time and moves); otherwise recall as usual. Attacked while resting: escape."""
+        """Rest where it is when that's a quiet room of the area: no aggressive mob spawns there (a far-off area
+        makes the walk back from the temple eat most of the time and moves); otherwise recall as usual. Attacked
+        while resting: escape. (Resting at 20% HP where trolls roam killed a level-15 mage.)"""
         from xania_sim.activities.fight import recover
 
         here = self.nav.here
-        if here in set(self.plan.rooms) and here not in self.nav.avoid:
+        if here in set(self.plan.rooms) and here not in self.nav.avoid and here not in self.plan.aggressive_rooms:
             if await recover(self.bot, timeout=timeout, on_attack=self.nav.escape):
                 return
         await super().rest(timeout)

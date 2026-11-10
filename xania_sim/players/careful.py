@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from xania_explorer import api
 
 from xania_sim.activities.fight import FLEE_AT, SAFE_SHARE, FightLog, FightResult, MobIndex, REST_BELOW, fight, recover, safe_targets
-from xania_sim.activities.move import ROOM_REPLY, Navigator, danger_rooms
+from xania_sim.activities.move import ROOM_REPLY, NavError, Navigator, danger_rooms
 from xania_sim.activities.tactics import BUFFS
 from xania_sim.core.session import Bot
 
@@ -124,8 +124,12 @@ class Leveller:
         attackers = self.mobs.in_view(lines, self.nav.here)
         level = self.nav.level or await self.level()
         if not attackers or self.crowd_damage(attackers, level) >= SAFE_SHARE * self.bot.prompt.hp:
-            await self.nav.escape()
-            return
+            try:
+                await self.nav.escape()
+                return
+            except NavError:  # every flee failed ("PANIC! You couldn't escape!"): the fight goes on, so fight it
+                if not attackers:
+                    raise
         for mob in attackers:
             r = await fight(self.bot, mob, self.mobs.keyword(mob), flee_at=self.flee_at, escape=self.nav.escape,
                             tactics=self.tactics, engaged=True)
