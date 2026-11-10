@@ -65,8 +65,10 @@ def main() -> None:
     d.add_argument("--out", default="build/dispatch")
     sub.add_parser("publish", help="build the dispatch, push it to the dispatch branch and deploy it to GitHub Pages")
     from xania_sim.players import run as play
+    from xania_sim.setup import stage
 
     play.add_commands(sub)
+    stage.add_command(sub)
     args = ap.parse_args()
     if args.cmd == "smoke":
         asyncio.run(smoke(args.port, args.existing))
@@ -98,6 +100,8 @@ def main() -> None:
             print("no crash")
     elif args.cmd == "level":
         play.run(args)
+    elif args.cmd == "stage":
+        asyncio.run(stage.stage_cmd(args))
     elif args.cmd == "status":
         status_cmd(args.bot)
 

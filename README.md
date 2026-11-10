@@ -191,7 +191,11 @@ tests. Other tools (Xania Builder, Xania Companions) build on the activities.
 | trials | `churn.py`, `hunt.py` | Stress: bots create and quit, or fight one mob, until xania crashes |
 | report | `dispatch.py` | The dispatch website: findings, runs, bots, predicted vs seen |
 
-The `setup` layer (levels, gear kits, skill loadouts) is next; `scenarios/` holds the live regression suite.
+| setup | `stage.py` | Puts a bot on stage: level, skills, a gear kit to wear; reports what went on in the game's own words |
+| setup | `kits.py` | Gear kits per level, class, alignment and race: `best`, `best-ac`, `best-hitdam`, `shop`, `floor`, `bare` |
+| setup | `loadouts.py` | Skill loadouts: `none`, `passives`, `class`, `natural`, or a TOML file; which skills a class can use when |
+
+`scenarios/` holds the live regression suite.
 
 ## Roadmap
 
