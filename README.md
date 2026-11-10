@@ -181,6 +181,7 @@ tests. Other tools (Xania Builder, Xania Companions) build on the activities.
 | activities | `move.py` | `Navigator`: where am I, safe routes (`danger_rooms` from aggressive spawns + `predict_fight`), walking, exploring |
 | activities | `fight.py` | Recognising mobs in a room, `safe_targets`, `fight()` round by round, `recover()`, the shared `FightLog`, `compare` |
 | activities | `practice.py` | Practice: reads the practice table, picks skills by class priority, finds a practice mob |
+| activities | `tactics.py` | Skills and spells in fights: buffs first, an opener, the best action each round, a mana reserve kept for escape |
 | players | `careful.py` | `Leveller`: the survival-first player: go where the safe fights are, fight one at a time, rest, flee |
 | players | `run.py` | The `level` command: one careful player for a while, recorded in the event log |
 | record | `events.py` | `parse(text)` into events, `Recorder` (watches a bot, stores events + snapshots), `Progress` (reads them) |
