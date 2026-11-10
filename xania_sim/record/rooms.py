@@ -56,7 +56,7 @@ def parse_view(text: str) -> RoomView | None:
 HERO = 91  # LEVEL_HERO: is_hero()
 
 
-def visible_to(room, level: int | None) -> bool:
+def _visible_to(room, level: int | None) -> bool:
     """Can a mortal of ``level`` see (and so enter) the room? ``Char::can_see(const Room &)`` (Char.cpp): ImpOnly and
     GodsOnly rooms are for immortals, HeroesOnly for level 91, NewbiesOnly for level 5 and below. A room it can't
     see has its exits into it left out of ``[Exits: ...]``. ``level`` None: unknown, assume it can."""
@@ -68,6 +68,12 @@ def visible_to(room, level: int | None) -> bool:
     if "HeroesOnly" in flags and level < HERO:
         return False
     return not ("NewbiesOnly" in flags and level > 5)
+
+
+try:  # the same rule lives in Explorer's graph from its level-gated-rooms change: use it when it's there
+    from xania_explorer.areafile.graph import visible_to
+except ImportError:  # an older Explorer
+    visible_to = _visible_to
 
 
 @dataclass
