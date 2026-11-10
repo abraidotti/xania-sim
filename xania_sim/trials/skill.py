@@ -18,6 +18,7 @@ Damage that differs from the prediction is a measurement, not a finding: it cali
 
 from __future__ import annotations
 
+import asyncio
 import re
 import time
 from dataclasses import dataclass, field
@@ -35,6 +36,7 @@ from xania_sim.core.names import bot_names, mob_words
 from xania_sim.core.server import TestMud
 from xania_sim.core.session import Bot
 from xania_sim.record.findings import Finding, bug_line_findings
+from xania_sim.record.heartbeat import Heartbeat
 from xania_sim.record.result import Outcome
 from xania_sim.record.rooms import Fingerprints
 
@@ -70,6 +72,8 @@ class ClassRun:
         n = self.uses
         return {"level": self.level, "uses": n, "success_rate": round(self.successes / n, 2) if n else None,
                 "damage_seen": round(sum(self.damage_seen) / len(self.damage_seen), 1) if self.damage_seen else None,
+                # like Explorer's per_cast: every attempt, a lost concentration counting as 0
+                "damage_per_attempt_seen": round(sum(self.damage_seen) / n, 1) if self.damage_seen and n else None,
                 "damage_predicted": None if self.damage_predicted is None else round(self.damage_predicted, 1),
                 "mana": round(sum(self.mana) / len(self.mana), 1) if self.mana else None,
                 "practice": f"{self.practice_from}% -> {self.practice_to}%" if self.practice_to is not None else None,
@@ -108,10 +112,20 @@ def kind_of(skill: str, is_spell: bool) -> str:
     return "spell" if is_spell else "skill"
 
 
+UNSEEN = {"Hide", "Invisible"}  # a bot without detect hidden/invis can't target these: "They aren't here."
+
+
+def seen_by_default(mob) -> bool:
+    from xania_explorer.areafile import flags as F
+
+    return not set(F.decode(mob.affected_by, F.AFFECT)) & UNSEEN
+
+
 def _target(world, cls: str, level: int, caster: bool) -> int | None:
-    """The highest-level mob the bot is predicted to beat comfortably, that the director can load."""
+    """The highest-level mob the bot is predicted to beat comfortably, that the director can load and the bot can
+    see (a permanently hidden or invisible mob can't be attacked without a detect spell)."""
     safe = safe_targets(world, cls, level, caster=caster)
-    mobs = [m for m in safe if m in world.mobs]
+    mobs = [m for m in safe if m in world.mobs and seen_by_default(world.mobs[m])]
     return max(mobs, key=lambda m: (world.mobs[m].level, safe[m]), default=None)
 
 
@@ -187,11 +201,15 @@ async def _use_in_fights(run: ClassRun, bot, d: Director, world, skill: str, cls
         await _into_arena(d, bot, mob)
         if kind == "buff":
             await tactics.prepare(bot)
-        nav = Navigator(bot, world)
+        nav = Navigator(bot, world, level=level)
+        nav.rest_timeout = 120  # a wait for moves mid-trial: never the default 10 minutes
         nav.here = ARENA
         r = await fight(bot, mob, world.mobs[mob].keywords.split()[0], escape=nav.escape, tactics=tactics)
         run.fights.append(f"{world.mobs[mob].short_descr}: {r.outcome}")
         if r.outcome == "died":
+            break
+        if r.outcome == "absent":  # it can't be found or seen: more tries would go the same way
+            run.fights.append("stopped: the target wasn't there to fight")
             break
     for u in tactics.uses:
         if u.action.name != skill:
@@ -226,6 +244,23 @@ async def _use_on_self(run: ClassRun, bot, skill: str, is_spell: bool) -> None:
         await bot.do("stand", expect=r"You stand|You are already|Nah")
 
 
+CAP_PER_RUN = 300  # seconds for practice and use at one class and level, plus a minute per fight
+
+
+async def _exercise(run, bot, d, nav, world, skill, cls, level, fights, kind, is_spell, beat) -> None:
+    beat(f"{cls} {level}", "practising")
+    await _practise(run, bot, d, nav, world, skill)
+    run.percent_before_use = await _set_percent(bot, d, skill, 75)
+    beat(f"{cls} {level}", "using", practice=f"{run.practice_from}->{run.practice_to}")
+    if kind in ("combat skill", "spell", "buff", "heal"):  # tactics uses what it can in fights
+        await _use_in_fights(run, bot, d, world, skill, cls, level, fights, kind)
+    if run.uses == 0:
+        await d.goto(TEMPLE)
+        await d.bring(bot.name)
+        await d.restore(bot.name)
+        await _use_on_self(run, bot, skill, is_spell)
+
+
 async def run_skill(result, skill: str, port: int = 9100, classes: list[str] | None = None,
                     levels: list[int] | None = None, fights: int = 4) -> list[Finding]:
     from xania_sim.setup.stage import stage
@@ -242,6 +277,8 @@ async def run_skill(result, skill: str, port: int = 9100, classes: list[str] | N
     found: list[Finding] = []
     names = iter(bot_names("skill", 500, mob_words(world)))
     runs = Path("runs") / time.strftime("skill-%Y%m%d-%H%M%S")
+    beat = Heartbeat(runs, "skill")
+    beat("trial", "planned", skill=skill, kind=kind, classes=", ".join(f"{c} {lv}" for c, lv in teach.items()))
     repro = f"python -m xania_sim skill '{skill}'"
     async with TestMud(port=port) as mud:
         d = await Director.create(mud)
@@ -252,18 +289,18 @@ async def run_skill(result, skill: str, port: int = 9100, classes: list[str] | N
                     bot = Bot(next(names), "skillpass1", host=mud.host, port=mud.port, transcript_dir=runs)
                     rep = await stage(mud, d, bot, level, "shop", "class", cls=cls, world=world)
                     run.staged = rep.ok
-                    nav = Navigator(bot, world, Fingerprints(world))
+                    beat(f"{cls} {level}", "staged", ok=rep.ok)
+                    nav = Navigator(bot, world, Fingerprints(world), level=level)
+                    nav.rest_timeout = 120
                     nav.here = TEMPLE
-                    await _practise(run, bot, d, nav, world, skill)
-                    run.percent_before_use = await _set_percent(bot, d, skill, 75)
-                    if kind in ("combat skill", "spell", "buff", "heal"):  # tactics uses what it can in fights
-                        await _use_in_fights(run, bot, d, world, skill, cls, level, fights, kind)
-                    if run.uses == 0:
-                        await d.goto(TEMPLE)
-                        await d.bring(bot.name)
-                        await d.restore(bot.name)
-                        await _use_on_self(run, bot, skill, info.is_spell)
+                    try:
+                        await asyncio.wait_for(_exercise(run, bot, d, nav, world, skill, cls, level, fights, kind,
+                                                         info.is_spell, beat), timeout=CAP_PER_RUN + 60 * fights)
+                    except asyncio.TimeoutError:
+                        run.fights.append(f"cut off after {CAP_PER_RUN + 60 * fights} s")
+                        beat(f"{cls} {level}", "cut off")
                     run.percent_after_use = await _percent(bot, skill)
+                    beat(f"{cls} {level}", "done", uses=run.uses, worked=run.successes, fights=", ".join(run.fights))
                     found += _findings(run, skill, repro)
                     result.measurements[f"{cls} {level}"] = run.summary()
                     result.outcomes.append(Outcome("skill", run.uses > 0 and not run.unknown,

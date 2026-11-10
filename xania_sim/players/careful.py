@@ -60,6 +60,7 @@ class Leveller:
         self._danger: dict[int, set[int]] = {}
         self._damage: dict[tuple[int, int], float] = {}
         self._spawns: dict[int, list[int]] | None = None
+        self.nav.on_ambush = self.ambushed
 
     async def level(self) -> int:
         r = await self.bot.do("score", expect=LEVEL)
@@ -67,6 +68,8 @@ class Leveller:
         level = int(m.group(1)) if m else 0
         if self.recorder is not None and level:
             self.recorder.level = level
+        if level:
+            self.nav.level = level  # rooms it can see depend on it (Mud School is for level 5 and below)
         return level
 
     def targets(self, level: int) -> dict[int, float]:
@@ -112,11 +115,34 @@ class Leveller:
             total += self._damage[key]
         return total
 
+    async def ambushed(self, text: str) -> None:
+        """Attacked on arrival (aggressive mobs): fight back if everything attacking is predicted to cost well under
+        the HP left (``SAFE_SHARE``, as for chosen fights), one attacker at a time; otherwise escape."""
+        if "fighting YOU" not in text:  # told only "You are still fighting": look to see who
+            text = (await self.bot.do("look", expect=ROOM_REPLY)).text
+        lines = "\n".join(ln for ln in text.splitlines() if "fighting YOU" in ln)
+        attackers = self.mobs.in_view(lines, self.nav.here)
+        level = self.nav.level or await self.level()
+        if not attackers or self.crowd_damage(attackers, level) >= SAFE_SHARE * self.bot.prompt.hp:
+            await self.nav.escape()
+            return
+        for mob in attackers:
+            r = await fight(self.bot, mob, self.mobs.keyword(mob), flee_at=self.flee_at, escape=self.nav.escape,
+                            tactics=self.tactics, engaged=True)
+            if self.log is not None:
+                self.log.record(self.bot.name, self.cls, level, r)
+            if self.after_fight is not None:
+                await self.after_fight(r, self.nav.here)
+            if r.outcome != "won":
+                break
+
     async def rest(self, timeout: float = 900) -> None:
         await self.nav.recall()
         await recover(self.bot, timeout=timeout, on_attack=self.nav.escape)
 
     flee_at = FLEE_AT  # subclasses (or callers) can set their own
+    toggles = {"autogold": True, "autosac": True}  # set at the start of run(); autosac off leaves corpses to loot
+    after_fight = None  # optional ``async (FightResult, room) -> None``, called after every fight it took part in
     practise_skills = True  # spend practice sessions at the nearest guildmaster at the start and after each level
 
     async def train(self) -> None:
@@ -134,8 +160,8 @@ class Leveller:
     async def run(self, goal_level: int, budget: float = 1800, stop=None) -> LevelReport:
         """Level until ``goal_level``, ``budget`` seconds, or ``stop()`` turns true (checked between fights)."""
         t0 = time.monotonic()
-        for toggle in TOGGLES:
-            await set_toggle(self.bot, toggle, True)
+        for toggle, on in self.toggles.items():
+            await set_toggle(self.bot, toggle, on)
         level = await self.level()
         rep = LevelReport(level, level)
         if self.nav.here is None:
@@ -199,6 +225,8 @@ class Leveller:
                         self.never.add(here)
                     self.nav.here = None
                     await self.nav.locate()
+                if self.after_fight is not None:
+                    await self.after_fight(r, here)
                 if r.levelled:
                     level = await self.level()
                     rep.level = level

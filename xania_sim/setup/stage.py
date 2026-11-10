@@ -89,8 +89,9 @@ class StageReport:
         return "\n".join(out)
 
 
-def resolve_kit(world, kit: K.Kit | str, level: int, cls: str, align: str, race: str) -> K.Kit:
-    return kit if isinstance(kit, K.Kit) else K.build_kit(world, kit, level, cls, align, race)
+def resolve_kit(world, kit: K.Kit | str, level: int, cls: str, align: str, race: str,
+                skills: dict[str, int] | None = None) -> K.Kit:
+    return kit if isinstance(kit, K.Kit) else K.build_kit(world, kit, level, cls, align, race, skills=skills)
 
 
 def resolve_loadout(world, loadout: L.Loadout | str, level: int, cls: str, race: str) -> L.Loadout:
@@ -118,8 +119,8 @@ async def stage(mud, director: Director, bot: Bot, level: int, kit: K.Kit | str,
         raise ValueError("stage needs cls= when kit and loadout are given by name")
     race = race or (kit.race if isinstance(kit, K.Kit) else "human")
     align = (align or (kit.align if isinstance(kit, K.Kit) else "n"))[0].lower()
-    kit = resolve_kit(world, kit, level, cls, align, race)
     loadout = resolve_loadout(world, loadout, level, cls, race)
+    kit = resolve_kit(world, kit, level, cls, align, race, loadout.settings)  # a weapon the bot is skilled with
     rep = StageReport(bot.name, cls, race, level, kit, loadout)
     if bot.conn is None or bot.conn.closed:
         await bot.enter(Profile(race=race, cls=cls, alignment=align))

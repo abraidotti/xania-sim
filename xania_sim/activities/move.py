@@ -13,13 +13,13 @@ from __future__ import annotations
 
 import asyncio
 import re
-from collections import deque
+from collections import Counter, deque
 from dataclasses import dataclass, field
 
 from xania_explorer import api
 from xania_explorer.areafile import flags as F
 
-from xania_sim.record.rooms import Fingerprints, RoomView, parse_view
+from xania_sim.record.rooms import Fingerprints, RoomView, parse_view, visible_to
 from xania_sim.core.session import Bot, Response
 
 RECALL = api.RECALL_ROOM
@@ -33,6 +33,8 @@ BLOCKED = re.compile(r"Alas, you cannot go that way|The \w+ is closed|protected 
 LOCKED = re.compile(r"It's locked|You can't do that")
 EXHAUSTED = re.compile(r"You are too exhausted")
 FIGHTING = re.compile(r"No way! +You are still fighting")
+# arriving in a room where something attacks at once (an aggressive mob): room_look shows "... fighting YOU!"
+AMBUSHED = re.compile(r" is here, fighting YOU!")
 ASLEEP = re.compile(r"In your dreams, or what\?|Nah\.\.\. You feel too relaxed")
 
 # What each command's own reply looks like (Bot.do reads past unprompted output until one appears).
@@ -96,14 +98,20 @@ def danger_rooms(world, level: int, cls: str = "knight") -> set[int]:
 
 class Navigator:
     def __init__(self, bot: Bot, world, fingerprints: Fingerprints | None = None, *, avoid: set[int] | None = None,
-                 can_fly: bool = False, has_boat: bool = False):
+                 can_fly: bool = False, has_boat: bool = False, level: int | None = None):
         self.bot, self.world = bot, world
+        self.level = level  # the bot's level, if known: rooms it can't see (NewbiesOnly above 5...) can't be entered
         self.fp = fingerprints or Fingerprints(world)
         self.avoid = set(avoid or ())
         self.can_fly, self.has_boat = can_fly, has_boat
         self.here: int | None = None
         self.blocked: dict[tuple[int, int], str] = {}  # (room, direction) -> why
         self.visited: set[int] = set()
+        self.escapes: Counter = Counter()  # escape() outcomes (fled, died, calm), for reports
+        # awaited with the room's text when something attacks the bot as it arrives; default: escape
+        self.on_ambush = None
+        self.recalls = 0  # every recall, for the loop guard
+        self.loops: list[str] = []  # walks given up as loops ("looping at room 3001 (5 replans, 4 recalls)")
 
     # -- where am I ------------------------------------------------------------------------------
     def _arrive(self, vnum: int | None) -> None:
@@ -143,6 +151,7 @@ class Navigator:
             await self.bot.do("stand", expect=POSITION_REPLY)
 
     async def recall(self, _escaping: bool = False) -> None:
+        self.recalls += 1
         r = await self.bot.do("recall", expect=RECALL_REPLY)
         if DOWN.search(r.text):
             await self.stand()
@@ -199,6 +208,7 @@ class Navigator:
                 break
         if not outcome:
             raise NavError(f"{self.bot.name} couldn't escape a fight")
+        self.escapes[outcome] += 1
         if fled_from is not None and outcome != "calm":
             self.avoid.add(fled_from)
         self.here = None
@@ -214,8 +224,11 @@ class Navigator:
 
     # -- planning ---------------------------------------------------------------------------------
     def _enterable(self, vnum: int) -> bool:
-        sector = self.world.rooms[vnum].sector
-        return not ((sector == AIR and not self.can_fly) or (sector == DEEP_WATER and not (self.can_fly or self.has_boat)))
+        room = self.world.rooms[vnum]
+        sector = room.sector
+        if (sector == AIR and not self.can_fly) or (sector == DEEP_WATER and not (self.can_fly or self.has_boat)):
+            return False
+        return visible_to(room, self.level)
 
     def plan(self, goal: int, start: int | None = None) -> list[api.Step] | None:
         """Shortest route avoiding danger, unenterable rooms and known blocked exits (the goal itself may be in a
@@ -283,8 +296,11 @@ class Navigator:
                 await self.bot.do("stand", expect=POSITION_REPLY)
                 continue
             break
-        if FIGHTING.search(r.text):
-            await self.escape()
+        if FIGHTING.search(r.text):  # something attacked while the bot stood here
+            if self.on_ambush is not None:
+                await self.on_ambush(r.text)
+            else:
+                await self.escape()
             return False
         view = parse_view(r.text)
         if view is None:
@@ -295,17 +311,34 @@ class Navigator:
                 self.here = None
             return False
         self._arrive(self.recognise(view, s.to_vnum))
+        if AMBUSHED.search(r.text):  # attacked on arrival: by default get out (the room joins avoid)
+            if self.on_ambush is not None:
+                await self.on_ambush(r.text)
+            else:
+                await self.escape()
+            return False
         return self.here == s.to_vnum
 
+    REPLANS_PER_ROOM = 4  # a walk that re-plans from the same room more often than this is going round in circles
+    RECALLS_PER_WALK = 3
+
     async def walk_to(self, goal: int, max_steps: int = 400) -> WalkResult:
+        """Walk to ``goal``, re-planning after a failed step. Gives up on a loop (the same room again and again, or
+        recall after recall: e.g. a room it can't recognise), so a bad map entry costs seconds, not all its moves."""
         if self.here is None:
             await self.locate()
-        steps = 0
+        steps, replans, recalls0 = 0, Counter(), self.recalls
         while steps < max_steps:
             if self.here == goal:
                 return WalkResult(True, steps, self.here)
             if self.here is None:
                 await self.locate()
+            replans[self.here] += 1
+            if replans[self.here] > self.REPLANS_PER_ROOM or self.recalls - recalls0 > self.RECALLS_PER_WALK:
+                why = (f"looping at room {self.here} ({replans[self.here]} re-plans, "
+                       f"{self.recalls - recalls0} recalls, going to {goal})")
+                self.loops.append(why)
+                return WalkResult(False, steps, self.here, why)
             route = self.plan(goal)
             if route is None:
                 return WalkResult(False, steps, self.here, "no route")
@@ -316,8 +349,10 @@ class Navigator:
                     break  # re-plan from wherever we are
         return WalkResult(self.here == goal, steps, self.here, "" if self.here == goal else "step limit")
 
-    async def explore(self, area: str, max_steps: int = 2000) -> Coverage:
-        """Visit every room of an area the bot can safely reach, nearest first."""
+    async def explore(self, area: str, max_steps: int = 2000, seconds: float | None = None) -> Coverage:
+        """Visit every room of an area the bot can safely reach, nearest first. ``seconds``: stop starting new walks
+        after this long (checked between walks, so a fight on the way is never cut short)."""
+        deadline = None if seconds is None else asyncio.get_running_loop().time() + seconds
         rooms = api.rooms_in(self.world, area)
         cov = Coverage(area, rooms)
         if self.here is None:
@@ -330,6 +365,10 @@ class Navigator:
         while todo and steps < max_steps:
             todo -= self.visited
             if not todo:
+                break
+            if deadline is not None and asyncio.get_running_loop().time() > deadline:
+                for v in todo:
+                    cov.skipped.setdefault(v, "out of time")
                 break
             dist = api.distances(self.world, self.here) if self.here is not None else {}
             # nearest by map distance, then check it's plannable under our constraints
@@ -347,6 +386,8 @@ class Navigator:
             steps += result.steps
             if not result.reached:
                 cov.skipped[target] = result.reason or "blocked"
+                if len(self.loops) >= 3:  # navigation itself is failing here: stop rather than keep circling
+                    break
         cov.visited = self.visited & set(rooms)
         for v in cov.visited:
             cov.skipped.pop(v, None)

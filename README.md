@@ -75,7 +75,7 @@ crashes: it reproduces crashes that need a quit to coincide with something perio
 
 ## In a pipeline: --json and exit codes
 
-Every trial (`smoke`, `hunt`, `churn`, `stage`, `level`) can run unattended:
+Every trial (`smoke`, `hunt`, `churn`, `stage`, `level`, `skill`, `area`) can run unattended:
 
 ```
 python -m xania_sim --xania /path/to/xania churn --minutes 5 --json > result.json
@@ -166,6 +166,54 @@ If something attacks it while it rests it stops and escapes (praying to recall i
 and one death to a mob takes that mob off the list for its level band. At the start and after every level it
 walks to the nearest guildmaster and spends its practice sessions on its class's priorities (`activities/practice.py`).
 
+## Testing skills and areas
+
+```
+python -m xania_sim skill bash                          # every class that learns it, at the level it's learned
+python -m xania_sim skill "magic missile" --levels 20   # also at level 20, where damage amounts show
+python -m xania_sim area TrollsDen.are                  # careful players of each class around the area's range
+python -m xania_sim area NewArea.are --cut-down         # just this area, Limbo, Midgaard, Mud School, helps, socials
+```
+
+**`skill`** stages a bot of each class that learns the skill (Explorer's class tables), at the level it's learned
+and any `--levels`, with shop gear and its class skills. It practises the skill from 1%, then uses it at 75% in
+fights against a mob it's predicted to beat, with tactics limited to that one skill. Anything that isn't for
+fights, it uses on itself. It measures the success rate, the damage against Explorer's prediction (from level 20,
+where amounts show), mana, the practice and use gains, and the messages seen. It reports a finding if a class
+can't use or practise the skill at the level it's learned, or if a use gets no reply at all.
+
+**`area`** plays an area at five levels: low-5, low, median, high and high+5. They come from the area's header
+range, or from its mob levels when it has none, and median is the median level of its combat mobs. At each
+level, one careful player per class (shop kit, natural skills; `--kit` and `--classes` to change) starts at the
+area's entrance and plays for `--minutes`, all classes at once. Each one explores every room it can safely reach,
+fights mobs that spawn there and are predicted safe, loots corpses by hand (autoloot stays off, xania#1), and
+sells the loot at a shop in the area or the nearest one. `report.md` in the run folder puts levels and classes
+side by side, with what was seen against Explorer's predictions:
+- rooms reached
+- kills, deaths and flees, against the number of safe mobs
+- HP lost per kill, seen and predicted
+- xp per minute
+- gold
+
+It reports a finding for a careful player who dies at a level inside the area's own range, and for rooms that the
+map says can be reached but no bot reached.
+
+`--cut-down` loads a world of only the area plus the hubs, through a temporary `area.lst` for the test MUD and a
+matching copy for Explorer. Use it for a new area that isn't linked in yet, or to keep other areas out of a test.
+
+Long trials guard their own time:
+- **Heartbeat:** every step goes to `progress.jsonl` in the run folder and to stderr, so you can follow a run with
+  `tail` and see where a dead one stopped.
+- **Hard caps:** each bot's session ends at its time plus 90 s, whatever it's doing. A wait for moves never takes
+  more than half the session. Exploring stops starting new walks halfway through, without cutting a fight short.
+- **Loop guard:** a walk that keeps re-planning from the same room, or keeps recalling, gives up and is reported
+  ("looping at room 3001").
+- **Crash watcher:** xania is checked every 5 s while bots play.
+- **Verdicts:** every level gets one, `ok: 5 kills` or `unproductive: no kills; escapes fled 5; 1 cut off`.
+  `--fail-fast` stops the trial after an unproductive level.
+- **Preflight:** `--quick` runs one class at the first level for 1.5 minutes, to check everything works before a
+  long run.
+
 ## Progress: what each bot has done
 
 ```
@@ -213,10 +261,11 @@ tests. Other tools (Xania Builder, Xania Companions) build on the activities.
 | record | `scan.py` | Skills/spells from the repo's source (levels via Explorer; entry text, target, position read here) + fingerprints |
 | record | `store.py` | `Lore`: shared SQLite (`state/lore.db`): abilities and their changes, raw observations, claims, status per band |
 | trials | `churn.py`, `hunt.py` | Stress: bots create and quit, or fight one mob, until xania crashes |
+| trials | `skill.py` | One skill or spell, class by class: practise it, use it, measure it against the prediction |
+| trials | `area.py` | One area at five levels around its range, a careful player per class; side-by-side report |
 | record | `result.py` | `Outcome` (one activity) and `TrialResult` (one run): the JSON and exit codes other tools read |
 | trials | `commands.py` | The CLI's trials, each returning a `TrialResult`; recording into the lore database happens here |
 | report | `dispatch.py` | The dispatch website: findings, runs, bots, predicted vs seen |
-
 | setup | `stage.py` | Puts a bot on stage: level, skills, a gear kit to wear; reports what went on in the game's own words |
 | setup | `kits.py` | Gear kits per level, class, alignment and race: `best`, `best-ac`, `best-hitdam`, `shop`, `floor`, `bare` |
 | setup | `loadouts.py` | Skill loadouts: `none`, `passives`, `class`, `natural`, or a TOML file; which skills a class can use when |
@@ -234,9 +283,10 @@ functions, checking files) belongs to Xania Builder, which will use Sim's scenar
 - **M3 (done)**: survival and levelling: pick safe fights with `api.predict_fight`, rest, flee, recall.
 - **M4 (done)**: event log (SQLite), `xania_sim status`, progress pages on the dispatch beside Explorer's predictions.
 - **M5-M8**: companionship, personas, legends and the roster runner, now [Xania Companions](https://github.com/abraidotti/xania-companions).
-- **Next**: the director and staging (bots at any level with chosen gear and skills), combat tactics; careless,
-  abusive and exploiting players (fuzzing commands, flooding, exploit hunts); balance trials; area testing;
-  then Xania Builder running Sim in its pipeline.
+- **Done since**: the director and staging (bots at any level with chosen gear and skills), combat tactics, the
+  activities layer, `--json` and exit codes, the skill and area trials.
+- **Next**: grouped players in the area trial; careless, abusive and exploiting players (fuzzing commands,
+  flooding, exploit hunts); balance trials; A/B commit comparison, for Xania Builder's gate.
 
 ## Platform notes
 

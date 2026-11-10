@@ -219,9 +219,11 @@ class Kits:
 
     # -- choosing -------------------------------------------------------------------------------------------------
     def build(self, name: str, level: int, cls: str, align: str = "n", race: str = "human",
-              two_handed: bool | None = None) -> Kit:
+              two_handed: bool | None = None, skills: dict[str, int] | None = None) -> Kit:
         """``two_handed``: None lets barbarians take a two-hander when it beats their best one-hander (others keep a
-        shield); True/False forces the choice (a Large race wears both)."""
+        shield); True/False forces the choice (a Large race wears both). ``skills``: the bot's skill % by name (its
+        loadout); weapons are then ranked by damage at the bot's skill in their type (one_hit: dice x skill / 100,
+        fight.cpp:472), so a knight with sword 89% and dagger 15% takes the sword."""
         if name not in KITS:
             raise KeyError(f"no kit named {name!r} (have {', '.join(KITS)})")
         align = align[0].lower()
@@ -231,7 +233,7 @@ class Kits:
             ranked = {slot: self._ranked(self.armour[slot], level, align, score, pick_min, shop) for slot in E.SLOTS}
             for slot, count in E.SLOTS.items():
                 kit.pieces += [_piece(item, slot) for item in _take(ranked[slot], count)]
-            self._add_weapon(kit, pick_min, shop, two_handed)
+            self._add_weapon(kit, pick_min, shop, two_handed, skills)
             self._fit_weight(kit, ranked, score)
         kit.base = self._school(kit)
         kit.remove = self._school(kit, removed=True)
@@ -300,21 +302,27 @@ class Kits:
             return sorted(pool, key=lambda i: (score(i), i.vnum))
         return sorted(pool, key=lambda i: (-score(i), -(i.ac + i.hitroll + i.damroll), i.vnum))
 
-    def _add_weapon(self, kit: Kit, pick_min: bool, shop: bool, two_handed: bool | None) -> None:
+    def _add_weapon(self, kit: Kit, pick_min: bool, shop: bool, two_handed: bool | None,
+                    skills: dict[str, int] | None = None) -> None:
         types = weapon_types(self.profiles[kit.cls])
+        if skills:  # what the bot is actually good with (a loadout can raise any type)
+            types = types | {t for t in WP.SKILLED_TYPES if skills.get(t, 0) >= 50}
         limit = wield_limit(kit.cls, kit.race, self.src_dir)
         pool = []
+        kind: dict[int, str] = {}
         for w in self.weapons:
             item = self.by_vnum[w.vnum]
             if (w.type in types and _allowed(item, kit.level, kit.align) and w.obj.weight <= limit and w.average > 0
                     and (not shop or w.buyable)):
                 pool.append(_piece(item, "wield", w))
+                kind[w.vnum] = w.type
         if not pool:
             kit.notes.append(f"no {'shop ' if shop else ''}weapon of {'/'.join(sorted(types))} at level {kit.level}")
             return
 
         def rank(p: Piece):
-            return (p.average + p.hitroll + p.damroll, -p.vnum)
+            skill = min(100, skills.get(kind[p.vnum], 1)) / 100 if skills else 1.0
+            return (p.average * skill + p.hitroll + p.damroll, -p.vnum)
 
         large = load_pc_races(self.src_dir)[kit.race].size in LARGE_SIZES
         one = [p for p in pool if not p.two_handed]
@@ -389,5 +397,5 @@ def kits_for(world) -> Kits:
 
 
 def build_kit(world, name: str, level: int, cls: str, align: str = "n", race: str = "human",
-              two_handed: bool | None = None) -> Kit:
-    return kits_for(world).build(name, level, cls, align, race, two_handed)
+              two_handed: bool | None = None, skills: dict[str, int] | None = None) -> Kit:
+    return kits_for(world).build(name, level, cls, align, race, two_handed, skills)

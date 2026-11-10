@@ -1,4 +1,4 @@
-"""``python -m xania_sim``: trials (smoke, hunt, churn, stage, level) and reading what they found.
+"""``python -m xania_sim``: trials (smoke, hunt, churn, stage, level, skill, area) and reading what they found.
 
 Every trial takes ``--json`` (print the TrialResult as JSON on stdout; the human text goes to stderr) and
 ``--no-record`` (don't store the run in the lore database), and exits 0 (clean), 1 (new findings) or 2 (couldn't
@@ -41,6 +41,18 @@ def main() -> None:
     sk.add_argument("--levels", nargs="*", type=int, help="also test at these levels (default: the level it's learned)")
     sk.add_argument("--fights", type=int, default=4, help="fights per class and level (default 4)")
     sk.add_argument("--port", type=int, default=9100)
+    ar = sub.add_parser("area", help="test an area: careful players of each class at levels around its range play it")
+    ar.add_argument("area", help="its file or name, e.g. Shire.are or 'The Shire'")
+    ar.add_argument("--classes", nargs="*", help="only these classes (default: all)")
+    ar.add_argument("--levels", nargs="*", type=int, help="these levels instead of low-5, low, median, high, high+5")
+    ar.add_argument("--minutes", type=float, default=4, help="play time per level, all classes at once (default 4)")
+    ar.add_argument("--kit", default="shop", choices=["shop", "best", "best-ac", "best-hitdam", "floor", "bare"], help="gear (default shop)")
+    ar.add_argument("--cut-down", action="store_true",
+                    help="load only this area, Limbo, Midgaard, Mud School, helps and socials")
+    ar.add_argument("--quick", action="store_true",
+                    help="preflight: one class at the first level for 1.5 minutes, to check it all works first")
+    ar.add_argument("--fail-fast", action="store_true", help="stop after a level where no bot won a fight")
+    ar.add_argument("--port", type=int, default=9160)
     sub.add_parser("report", help="print the latest runs and findings")
     st = sub.add_parser("status", help="each bot's progress: level, xp, kills, deaths, time played")
     st.add_argument("bot", nargs="?", help="show this bot's recent events and areas too")

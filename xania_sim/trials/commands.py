@@ -128,4 +128,15 @@ def skill(args) -> TrialResult:
     return run("skill", f"Skill: {args.skill}", body, not args.no_record)
 
 
-TRIALS = {"smoke": smoke, "hunt": hunt, "churn": churn, "stage": stage, "level": level, "skill": skill}
+def area(args) -> TrialResult:
+    from xania_sim.trials.area import run_area
+
+    def body(result):
+        return asyncio.run(run_area(result, args.area, args.port, args.classes, args.levels, args.minutes, args.kit,
+                                    args.cut_down, args.quick, args.fail_fast))
+
+    return run("area", f"Area: {args.area}" + (" (cut-down world)" if args.cut_down else ""), body,
+               not args.no_record)
+
+
+TRIALS = {"smoke": smoke, "hunt": hunt, "churn": churn, "stage": stage, "level": level, "skill": skill, "area": area}

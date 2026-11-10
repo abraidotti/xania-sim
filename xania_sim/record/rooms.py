@@ -53,6 +53,23 @@ def parse_view(text: str) -> RoomView | None:
     return RoomView(before, dirs)
 
 
+HERO = 91  # LEVEL_HERO: is_hero()
+
+
+def visible_to(room, level: int | None) -> bool:
+    """Can a mortal of ``level`` see (and so enter) the room? ``Char::can_see(const Room &)`` (Char.cpp): ImpOnly and
+    GodsOnly rooms are for immortals, HeroesOnly for level 91, NewbiesOnly for level 5 and below. A room it can't
+    see has its exits into it left out of ``[Exits: ...]``. ``level`` None: unknown, assume it can."""
+    if level is None:
+        return True
+    flags = set(F.decode(room.room_flags, F.ROOM))
+    if flags & {"ImpOnly", "GodsOnly"}:
+        return False
+    if "HeroesOnly" in flags and level < HERO:
+        return False
+    return not ("NewbiesOnly" in flags and level > 5)
+
+
 @dataclass
 class Fingerprints:
     """Precomputed per-room recognition data for a world."""
@@ -70,7 +87,9 @@ class Fingerprints:
             self.first[v] = first_line(r.description)
             real = {d: e for d, e in r.exits.items() if not e.cosmetic and e.to_vnum in rooms}
             self.shown[v] = frozenset(F.DIRECTIONS[d] for d in real)
-            self.always[v] = frozenset(F.DIRECTIONS[d] for d, e in real.items() if not e.is_door)
+            # a door may be closed, and an exit into a restricted room is hidden from those who can't see it
+            self.always[v] = frozenset(F.DIRECTIONS[d] for d, e in real.items()
+                                       if not e.is_door and _unrestricted(rooms[e.to_vnum]))
 
     def matches(self, vnum: int, view: RoomView) -> bool:
         if view.dark:
@@ -86,3 +105,7 @@ class Fingerprints:
     def candidates(self, view: RoomView, among=None) -> list[int]:
         pool = self.world.rooms if among is None else among
         return [v for v in pool if self.matches(v, view)]
+
+
+def _unrestricted(room) -> bool:
+    return not set(F.decode(room.room_flags, F.ROOM)) & {"ImpOnly", "GodsOnly", "HeroesOnly", "NewbiesOnly"}

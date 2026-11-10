@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -45,7 +46,8 @@ D={data}
 test -x "$X/install/bin/xania" || {{ echo "NO_BUILD $X/install/bin/xania"; exit 3; }}
 {wipe}mkdir -p "$D/player" "$D/gods" "$D/system" "$D/log"
 test -f "$D/log/xania.log" && mv "$D/log/xania.log" "$D/log/xania-$(date +%s).log"
-export MUD_PORT={port} MUD_AREA_DIR="$X/area/" MUD_HTML_DIR="$X/html/" MUD_DATA_DIR="$D/"
+AREA="$X/area/"
+{area_list}export MUD_PORT={port} MUD_AREA_DIR="$AREA" MUD_HTML_DIR="$X/html/" MUD_DATA_DIR="$D/"
 cd "$X"
 "$X/install/bin/doorman" > "$D/log/doorman.log" 2>&1 & echo $! > "$D/doorman.pid"
 sleep 0.5
@@ -85,13 +87,28 @@ def checkout_path() -> str:
     return run_bash(f'echo "{XANIA}"').strip()
 
 
+def area_list_script(names: list[str] | None) -> str:
+    """Bash that makes ``$D/area/``: every file of the checkout's area dir symlinked, and an area.lst of ``names``."""
+    if not names:
+        return ""
+    for n in names:
+        if not re.fullmatch(r"[\w.-]+", n):
+            raise ValueError(f"not an area file name: {n!r}")
+    listing = "\\n".join(names + ["$"])
+    return (f'rm -rf "$D/area"; mkdir -p "$D/area"; ln -s "$X/area/"* "$D/area/"; rm "$D/area/area.lst"\n'
+            f"printf '{listing}\\n' > \"$D/area/area.lst\"\nAREA=\"$D/area/\"\n")
+
+
 class TestMud:
     """``async with TestMud(port=9100) as mud:`` then connect bots to ``mud.host``/``mud.port``."""
 
     __test__ = False  # not a pytest test class
 
-    def __init__(self, port: int = 9100, host: str = "127.0.0.1"):
+    def __init__(self, port: int = 9100, host: str = "127.0.0.1", area_list: list[str] | None = None):
+        """``area_list``: load only these area files, in this order (a cut-down world), instead of the checkout's
+        area.lst. Every file stays available (symlinked) for anything an area refers to."""
         self.port, self.host = port, host
+        self.area_list = area_list
         self.data_dir = f"/tmp/xania-sim/{port}"  # Linux path
         self._proc: subprocess.Popen | None = None
 
@@ -103,7 +120,8 @@ class TestMud:
         if await self._answers():
             raise RuntimeError(f"something is already listening on port {self.port}")
         script = _START.format(xania=XANIA, data=shlex.quote(self.data_dir), port=self.port,
-                               wipe='rm -rf "$D"\n' if fresh else "", gdb=GDB, marker=BACKTRACE_MARKER)
+                               wipe='rm -rf "$D"\n' if fresh else "", gdb=GDB, marker=BACKTRACE_MARKER,
+                               area_list=area_list_script(self.area_list))
         self._proc = subprocess.Popen(_bash(), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                       stderr=subprocess.STDOUT)
         self._proc.stdin.write(script.encode())

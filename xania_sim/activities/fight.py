@@ -41,7 +41,7 @@ def attacked(text: str, hp_before: int | None = None, hp_now: int | None = None)
     return bool(ATTACKED.search(text)) or (hp_before is not None and hp_now is not None and hp_now < hp_before)
 NOT_HERE = re.compile(r"They aren't here|You can't|Kill whom|Not on that target|You must MURDER")
 _TAGS = re.compile(r"^(?:\([^)]*\) )+")
-_POSED = re.compile(r"^(?P<short>.+?) is (?:standing|sitting|resting|sleeping|fighting|stunned|lying)\b")
+_POSED = re.compile(r"^(?P<short>.+?) is (?:here, fighting|standing|sitting|resting|sleeping|fighting|stunned|lying)\b")
 
 FIGHTS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS fights (
@@ -182,16 +182,19 @@ async def _open(bot: Bot, keyword: str, tactics) -> Response:
 
 
 async def fight(bot: Bot, mob: int, keyword: str, flee_at: float = FLEE_AT, escape=None,
-                round_timeout: float = 9, tactics=None) -> FightResult:
+                round_timeout: float = 9, tactics=None, engaged: bool = False) -> FightResult:
     """Attack and follow the fight to its end through the prompts it produces. ``escape`` (e.g. Navigator.escape)
     is awaited when HP falls below ``flee_at``. With ``tactics`` (tactics.Tactics) the bot opens with its best
     opener and uses skills and spells between rounds; fleeing stays as it is, and is checked first every round."""
     p0 = bot.prompt
     if tactics is not None:
         tactics.begin(mob, keyword)
-    r = await _open(bot, keyword, tactics)
-    text, rounds = r.text, 0
-    if NOT_HERE.search(r.text) and not DEAD.search(r.text):
+    if engaged:  # already fighting (it attacked first): follow the fight, don't open one (a hidden mob can't be named)
+        text, rounds = "", 0
+    else:
+        r = await _open(bot, keyword, tactics)
+        text, rounds = r.text, 0
+    if not engaged and NOT_HERE.search(r.text) and not DEAD.search(r.text):
         return FightResult(mob, "absent", 0, p0.hp, bot.prompt.hp, bot.prompt.max_hp, 0, False, text,
                            p0.mana, bot.prompt.mana)
     outcome = "ended"
