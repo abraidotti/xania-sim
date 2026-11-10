@@ -253,11 +253,17 @@ class Tactics:
         """Expected damage per cast attempt (Explorer predict_spell, at this skill %, against the mob's level)."""
         m = self._mob(mob)
         victim_level = m.level if m is not None else self.level
-        key = (name, victim_level)
+        key = (name, victim_level, mob)
         if key not in self._spell_cache:
             try:
-                p = api.predict_spell(self.world, self.cls, name, self.level, victim_level,
-                                      skill=self.skills.get(name, 75))
+                try:  # with the mob, its resistance or vulnerability to the spell counts (fire vs trolls)
+                    if mob is None:
+                        raise LookupError
+                    p = api.predict_spell(self.world, self.cls, name, self.level, victim_level,
+                                          skill=self.skills.get(name, 75), mob_vnum=mob)
+                except Exception:  # noqa: BLE001 - an older Explorer, a mob it doesn't model, no area files
+                    p = api.predict_spell(self.world, self.cls, name, self.level, victim_level,
+                                          skill=self.skills.get(name, 75))
                 self._spell_cache[key] = (p.per_cast, p.beats)
             except (KeyError, ValueError, AttributeError, TypeError):
                 self._spell_cache[key] = (0.0, ROUND_PULSES)
