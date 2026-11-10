@@ -32,6 +32,12 @@ GDB = os.environ.get("XANIA_SIM_GDB", "1")  # 0 = run xania without gdb
 ON_WINDOWS = sys.platform == "win32"
 BACKTRACE_MARKER = "=== xania-sim: backtrace ==="
 
+
+def set_checkout(linux_path: str) -> None:
+    """Point the test MUD, the game repo and the world at another Xania checkout (``--xania``), before using them."""
+    global XANIA
+    XANIA = linux_path
+
 _START = """
 set -e
 X={xania}

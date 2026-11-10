@@ -1,40 +1,23 @@
-"""``python -m xania_sim smoke``: start a test MUD, create a bot, look around, quit."""
+"""``python -m xania_sim``: trials (smoke, hunt, churn, stage, level) and reading what they found.
+
+Every trial takes ``--json`` (print the TrialResult as JSON on stdout; the human text goes to stderr) and
+``--no-record`` (don't store the run in the lore database), and exits 0 (clean), 1 (new findings) or 2 (couldn't
+run): see record/result.py. ``--xania PATH`` (before the command) points everything at another Xania checkout.
+"""
 
 from __future__ import annotations
 
 import argparse
-import asyncio
-import time
+import contextlib
+import sys
 from pathlib import Path
 
 from xania_sim.core import world
-from xania_sim.core.names import bot_names, mob_words
-from xania_sim.core.server import TestMud
-from xania_sim.core.session import Bot, Profile
-
-
-async def smoke(port: int, existing: bool) -> None:
-    runs = Path("runs") / time.strftime("%Y%m%d-%H%M%S")
-    if existing:
-        await _visit(port, runs)
-        return
-    async with TestMud(port=port) as mud:
-        await _visit(mud.port, runs)
-
-
-async def _visit(port: int, runs: Path) -> None:
-    [name] = bot_names("smoke", 1, mob_words(world.load()))
-    bot = Bot(name, "botpass1", port=port, transcript_dir=runs)
-    r = await bot.enter(Profile(race="human", cls="knight"))
-    print(f"{bot.name} is in ({'created' if bot.created else 'logged in'}): {r.prompt}")
-    look = await bot.do("look")
-    print("\n".join(look.lines[:6]))
-    print((await bot.quit()).strip().splitlines()[:1])
-    print(f"transcript: {bot.transcript}")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(prog="xania_sim")
+    ap.add_argument("--xania", help="the Xania checkout to test, as a Linux path (default $XANIA_SIM_XANIA or ~/xania)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("smoke", help="start a test MUD, create a bot, look, quit")
     s.add_argument("--port", type=int, default=9100)
@@ -48,12 +31,10 @@ def main() -> None:
     h.add_argument("--bots", type=int, default=4)
     h.add_argument("--minutes", type=float, default=10)
     h.add_argument("--port", type=int, default=9100)
-    h.add_argument("--no-record", action="store_true", help="don't record the run in the lore database")
     cu = sub.add_parser("churn", help="bots create characters and quit in a loop on a test MUD until xania crashes")
     cu.add_argument("--bots", type=int, default=6)
     cu.add_argument("--minutes", type=float, default=15)
     cu.add_argument("--port", type=int, default=9100)
-    cu.add_argument("--no-record", action="store_true", help="don't record a crash in the lore database")
     sub.add_parser("report", help="print the latest runs and findings")
     st = sub.add_parser("status", help="each bot's progress: level, xp, kills, deaths, time played")
     st.add_argument("bot", nargs="?", help="show this bot's recent events and areas too")
@@ -66,44 +47,38 @@ def main() -> None:
     sub.add_parser("publish", help="build the dispatch, push it to the dispatch branch and deploy it to GitHub Pages")
     from xania_sim.players import run as play
     from xania_sim.setup import stage
+    from xania_sim.trials.commands import TRIALS
 
     play.add_commands(sub)
     stage.add_command(sub)
+    for name in TRIALS:
+        t = sub.choices[name]
+        t.add_argument("--json", action="store_true", help="print the result as JSON (the text goes to stderr)")
+        t.add_argument("--no-record", action="store_true", help="don't store the run in the lore database")
     args = ap.parse_args()
-    if args.cmd == "smoke":
-        asyncio.run(smoke(args.port, args.existing))
-    elif args.cmd == "lore":
-        lore_cmd(args.db, args.level, args.names)
-    elif args.cmd == "hunt":
-        from xania_sim.trials.hunt import hunt
+    if args.xania:
+        from xania_sim.core.server import set_checkout
 
-        r = asyncio.run(hunt(args.mob, args.bots, args.minutes, args.port, record=not args.no_record))
-        print(f"{r.fights} fights in {r.seconds:.0f} s, {r.errors} bot errors")
-        if r.crashed:
-            print(f"XANIA CRASHED. Report with backtrace: {r.report_path}\n")
-            print("\n".join(r.report.splitlines()[:40]))
-        else:
-            print("no crash")
-        for e in r.last_errors:
-            print("  bot error:", e)
+        set_checkout(args.xania)
+    if args.cmd in TRIALS:
+        sys.exit(trial_cmd(TRIALS[args.cmd], args))
+    if args.cmd == "lore":
+        lore_cmd(args.db, args.level, args.names)
     elif args.cmd in ("report", "findings", "dispatch", "publish"):
         journal_cmd(args)
-    elif args.cmd == "churn":
-        from xania_sim.trials.churn import churn
-
-        r = asyncio.run(churn(args.bots, args.minutes, args.port, record=not args.no_record))
-        print(f"{r.quits} quits in {r.seconds:.0f} s, {len(r.errors)} bot errors")
-        if r.crashed:
-            print(f"XANIA CRASHED. Report: {r.report_path}")
-            print(chr(10).join(r.report.splitlines()[:30]))
-        else:
-            print("no crash")
-    elif args.cmd == "level":
-        play.run(args)
-    elif args.cmd == "stage":
-        asyncio.run(stage.stage_cmd(args))
     elif args.cmd == "status":
         status_cmd(args.bot)
+
+
+def trial_cmd(trial, args) -> int:
+    """Run a trial; print its result (text, or JSON with everything else on stderr); return its exit code."""
+    out = sys.stderr if args.json else sys.stdout
+    with contextlib.redirect_stdout(out):
+        result = trial(args)
+        print(result.text())
+    if args.json:
+        print(result.to_json())
+    return result.exit_code()
 
 
 def _progress(lore):

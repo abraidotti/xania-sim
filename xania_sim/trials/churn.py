@@ -30,9 +30,10 @@ class ChurnReport:
     report: str = ""
     report_path: Path | None = None
     errors: list[str] = field(default_factory=list)
+    findings: list = field(default_factory=list)  # findings.Finding
 
 
-async def churn(bots: int = 6, minutes: float = 15, port: int = 9100, record: bool = True) -> ChurnReport:
+async def churn(bots: int = 6, minutes: float = 15, port: int = 9100) -> ChurnReport:
     runs = Path("runs") / f"churn-{time.strftime('%Y%m%d-%H%M%S')}"
     names = iter(bot_names("churn", 100_000, mob_words(W.load())))
     rep = ChurnReport()
@@ -70,19 +71,13 @@ async def churn(bots: int = 6, minutes: float = 15, port: int = 9100, record: bo
             runs.mkdir(parents=True, exist_ok=True)
             rep.report_path = runs / "xania-crash.txt"
             rep.report_path.write_text(rep.report, encoding="utf-8")
-    if rep.crashed and record:
-        from xania_sim.record.findings import Journal, crash_finding
-        from xania_sim.core.repo import GameRepo
-        from xania_sim.record.store import Lore
+        log = mud.log("xania")
+    from xania_sim.record.findings import bug_line_findings, crash_finding
 
-        v = GameRepo().version()
-        lore = Lore()
-        j = Journal(lore.db)
-        run_id = j.start_run("churn", f"Churn: {bots} bots creating and quitting", v.commit, v.dirty)
-        f = crash_finding(rep.report, f"python -m xania_sim churn --bots {bots} --minutes {minutes:g}",
-                          f"{bots} bots creating characters and quitting in a loop; crashed after {rep.quits} quits "
-                          f"in {rep.seconds:.0f} s.")
-        j.record(run_id, f, v.commit)
-        j.finish_run(run_id, quits=rep.quits, seconds=round(rep.seconds), crashed=True, findings=1)
-        lore.close()
+    repro = f"python -m xania_sim churn --bots {bots} --minutes {minutes:g}"
+    if rep.crashed:
+        rep.findings.append(crash_finding(
+            rep.report, repro, f"{bots} bots creating characters and quitting in a loop; crashed after {rep.quits} "
+            f"quits in {rep.seconds:.0f} s."))
+    rep.findings += bug_line_findings(log, repro)
     return rep

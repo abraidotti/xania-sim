@@ -36,6 +36,7 @@ class HuntResult:
     report: str = ""
     report_path: Path | None = None
     last_errors: list[str] = field(default_factory=list)
+    findings: list = field(default_factory=list)  # findings.Finding: the crash, and xania's BUG: log lines
 
 
 def spawn_rooms(world, keywords: str) -> tuple[list[int], str]:
@@ -76,8 +77,8 @@ async def _fighter(mud, w, fp, names, rooms, target, stop, res: HuntResult, runs
                 stop.set()
 
 
-async def hunt(mob: str, bots: int = 4, minutes: float = 10, port: int = 9100, record: bool = True) -> HuntResult:
-    """Run the hunt; with ``record``, the run and its findings go into the lore database (for the dispatch)."""
+async def hunt(mob: str, bots: int = 4, minutes: float = 10, port: int = 9100) -> HuntResult:
+    """Run the hunt. Its findings come back in the result (``record.result.add_findings`` stores them)."""
     findings: list = []
     w = W.load()
     fp = Fingerprints(w)
@@ -109,22 +110,5 @@ async def hunt(mob: str, bots: int = 4, minutes: float = 10, port: int = 9100, r
             findings.append(crash_finding(res.report, repro, f"Level-1 bots fighting {mob} (room {rooms}).",
                                           transcript_tails(runs)))
         findings.extend(bug_line_findings(mud.log("xania"), repro))
-    if record:
-        _record(f"Hunt: {mob}, {bots} bots", findings, fights=res.fights, seconds=round(res.seconds),
-                crashed=res.crashed)
+    res.findings = findings
     return res
-
-
-def _record(title: str, found: list, **summary) -> None:
-    from xania_sim.record.findings import Journal
-    from xania_sim.core.repo import GameRepo
-    from xania_sim.record.store import Lore
-
-    v = GameRepo().version()
-    lore = Lore()
-    journal = Journal(lore.db)
-    run_id = journal.start_run("hunt", title, v.commit, v.dirty)
-    for f in found:
-        journal.record(run_id, f, v.commit)
-    journal.finish_run(run_id, **summary, findings=len(found))
-    lore.close()

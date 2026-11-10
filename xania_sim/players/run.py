@@ -39,7 +39,8 @@ def _setup(bot: Bot, w, cls: str, race: str, lore: Lore, run_id: str):
 
 
 async def level(name: str, cls: str, race: str, goal: int, minutes: float, port: int, test_mud: bool,
-                password: str) -> None:
+                password: str):
+    """Returns the careful player's LevelReport."""
     w, lore = W.load(), Lore()
     runs = Path("runs") / f"level-{time.strftime('%Y%m%d-%H%M%S')}"
 
@@ -57,9 +58,11 @@ async def level(name: str, cls: str, race: str, goal: int, minutes: float, port:
                 await bot.quit()
         print(f"{bot.name}: level {rep.start_level} -> {rep.level} in {rep.seconds / 60:.0f} min; {rep.kills} kills, "
               f"{rep.flees} flees, {rep.deaths} deaths, {rep.xp} xp ({rep.reason}). Transcript: {bot.transcript}")
+        rep.transcript = str(bot.transcript)
+        return rep
 
     try:
-        await _with_mud(test_mud, port, play)
+        return await _with_mud(test_mud, port, play)
     finally:
         lore.close()
 
@@ -76,6 +79,6 @@ def add_commands(sub) -> None:
     p.add_argument("--password", default="botpass1")
 
 
-def run(args) -> None:
-    asyncio.run(level(args.name.capitalize(), args.cls, args.race, args.goal, args.minutes, args.port, args.test_mud,
+def run(args):
+    return asyncio.run(level(args.name.capitalize(), args.cls, args.race, args.goal, args.minutes, args.port, args.test_mud,
                       args.password))

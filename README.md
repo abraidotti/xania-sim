@@ -73,6 +73,23 @@ to retire it, once the crash is gone).
 crashes: it reproduces crashes that need a quit to coincide with something periodic (it found
 [abraidotti/xania#2](https://github.com/abraidotti/xania/issues/2), a use-after-free when a quit lands on a tick).
 
+## In a pipeline: --json and exit codes
+
+Every trial (`smoke`, `hunt`, `churn`, `stage`, `level`) can run unattended:
+
+```
+python -m xania_sim --xania /path/to/xania churn --minutes 5 --json > result.json
+echo $?    # 0 clean, 1 new findings, 2 couldn't run
+```
+
+- `--json` prints the result on stdout (schema in `xania_sim/record/result.py`: the trial, the Xania commit,
+  measurements, findings with their status, each activity's outcome with the game's own words, and paths to
+  transcripts and crash reports); the human summary goes to stderr.
+- The exit code is **0** when nothing new turned up, **1** when there's a finding that isn't marked known or ignored
+  (`python -m xania_sim findings SIG --status known`), and **2** when the trial couldn't run (no build, the MUD
+  wouldn't start, staging failed). A known crash that reproduces is listed but doesn't fail the run.
+- `--xania PATH` (before the command) tests another checkout; `--no-record` keeps the run out of the lore database.
+
 ## Reading and sharing what runs found: the dispatch
 
 Hunts and live test sessions record themselves (runs and findings) in the lore database. A finding is one problem
@@ -190,6 +207,8 @@ tests. Other tools (Xania Builder, Xania Companions) build on the activities.
 | record | `scan.py` | Skills/spells from the repo's source (levels via Explorer; entry text, target, position read here) + fingerprints |
 | record | `store.py` | `Lore`: shared SQLite (`state/lore.db`): abilities and their changes, raw observations, claims, status per band |
 | trials | `churn.py`, `hunt.py` | Stress: bots create and quit, or fight one mob, until xania crashes |
+| record | `result.py` | `Outcome` (one activity) and `TrialResult` (one run): the JSON and exit codes other tools read |
+| trials | `commands.py` | The CLI's trials, each returning a `TrialResult`; recording into the lore database happens here |
 | report | `dispatch.py` | The dispatch website: findings, runs, bots, predicted vs seen |
 
 | setup | `stage.py` | Puts a bot on stage: level, skills, a gear kit to wear; reports what went on in the game's own words |
@@ -211,7 +230,7 @@ functions, checking files) belongs to Xania Builder, which will use Sim's scenar
 - **M5-M8**: companionship, personas, legends and the roster runner, now [Xania Companions](https://github.com/abraidotti/xania-companions).
 - **Next**: the director and staging (bots at any level with chosen gear and skills), combat tactics; careless,
   abusive and exploiting players (fuzzing commands, flooding, exploit hunts); balance trials; area testing;
-  `--json` output and exit codes so Builder can run Sim in a pipeline.
+  then Xania Builder running Sim in its pipeline.
 
 ## Platform notes
 

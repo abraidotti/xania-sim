@@ -14,7 +14,8 @@ from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 
-from xania_sim.core.server import XANIA, checkout_path, run_bash
+from xania_sim.core import server as S
+from xania_sim.core.server import checkout_path, run_bash
 
 
 @dataclass(frozen=True)
@@ -36,13 +37,13 @@ class BuildCheck:
 
 
 class GameRepo:
-    def __init__(self, linux_path: str = XANIA):
-        self.linux_path = linux_path
+    def __init__(self, linux_path: str | None = None):
+        self.linux_path = linux_path or S.XANIA  # default: the checkout set now (``set_checkout``), not at import
 
     @cached_property
     def path(self) -> Path:
         """The repo as a path this Python can read."""
-        return Path(checkout_path() if self.linux_path == XANIA else self.linux_path)
+        return Path(checkout_path() if self.linux_path == S.XANIA else self.linux_path)
 
     @property
     def src_dir(self) -> Path:
