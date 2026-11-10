@@ -119,4 +119,13 @@ def level(args) -> TrialResult:
     return run("level", f"Level: {args.name}, {args.cls} to level {args.goal}", body, not args.no_record)
 
 
-TRIALS = {"smoke": smoke, "hunt": hunt, "churn": churn, "stage": stage, "level": level}
+def skill(args) -> TrialResult:
+    from xania_sim.trials.skill import run_skill
+
+    def body(result):
+        return asyncio.run(run_skill(result, args.skill, args.port, args.classes, args.levels, args.fights))
+
+    return run("skill", f"Skill: {args.skill}", body, not args.no_record)
+
+
+TRIALS = {"smoke": smoke, "hunt": hunt, "churn": churn, "stage": stage, "level": level, "skill": skill}
