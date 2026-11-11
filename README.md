@@ -1,127 +1,103 @@
 # Xania Sim
 
-Bots that play [Xania](https://github.com/mattgodbolt/xania) over telnet to test it. Xania Sim simulates
-players, good and bad: anything a real person could do through a MUD client.
+Xania Sim tests [Xania](https://github.com/mattgodbolt/xania) by playing it. Its bots connect over telnet, like
+any MUD client, and do what players do: create characters, explore, fight, loot, shop, practise, level, quit. They
+play carefully, carelessly or awkwardly, and they report what went wrong: a crash comes back with a source-level
+backtrace, and an odd result comes back with the game's own words as evidence.
 
-- **Finding bugs**: bots play the real game and do what players do, so they run into crashes and oddities that
-  nobody would find by reading code. A crash comes back as a report with a source-level backtrace.
-- **Testing features**: scripted scenarios that check new skills, spells, areas and systems on the real game.
-- **Measuring the game**: bots level, fight and survive, and their results sit beside Xania Explorer's predictions.
+- **Finding bugs** that only show up in play: a crash on autoloot, a quit landing on a tick, an empty reply at a
+  login prompt.
+- **Testing features**: a skill, a spell or an area, at the levels it's meant for, with each class.
+- **Measuring the game** against [Xania Explorer](https://github.com/abraidotti/xania-explorer)'s predictions:
+  Explorer works out from the area files and C++ what should happen; the bots see what does happen.
 
-An immortal "director" only sets the stage (levels, skills, gear) so a test can start where a real player would be;
-from there the bots just play. Bots never touch your real game: tests run on their own isolated MUD.
-
-Companion bots (characters who play beside you and write their own legends) used to live here and are now their
-own project, [Xania Companions](https://github.com/abraidotti/xania-companions), built on Xania Sim.
-
-It works alongside [Xania Explorer](../xania-explorer): Explorer reads the area files and C++ tables and predicts
-what should happen; the bots check what does happen. xania-sim imports Explorer's API (`xania_explorer.api`) for the
-map, names and predictions. Explorer never imports xania-sim.
+Every run uses its own isolated test MUD, started from your Xania build with a throwaway data directory, so it
+never touches a game people are playing on. (Xania is the game; `xania` is its server process.)
 
 ## Setup
 
-1. Xania built from source: a checkout (by default `~/xania`) with `make` run in it. See Xania's README.
-2. Install this package and Explorer from the sibling checkout:
+1. A Xania checkout built with `make`. By default Xania Sim looks for it at `~/xania`; set `XANIA_SIM_XANIA`, or
+   pass `--xania PATH` before a command, to use another.
+2. Python 3.12 or later, with Xania Sim and Xania Explorer installed:
 
 ```
 python -m venv .venv
-source .venv/bin/activate         # or .venv\Scripts\activate on Windows
-python -m pip install -e ".[dev]" -e ../xania-explorer    # with Explorer checked out next to this repo
-python -m pip install -e ".[dev,explorer]"                # or: Explorer straight from GitHub
+source .venv/bin/activate            # .venv\Scripts\activate on Windows
+python -m pip install -e ".[dev,explorer]"
 ```
 
-Settings (environment variables): `XANIA_SIM_XANIA`, the Xania checkout (default `$HOME/xania`).
+(With Explorer checked out next to this repo, `python -m pip install -e ".[dev]" -e ../xania-explorer` uses that
+copy instead.)
 
-## Try it
-
-```
-python -m xania_sim smoke                 # starts a test MUD on port 9100, creates a bot, looks, quits
-python -m xania_sim smoke --port 9000 --existing   # the same against a MUD you already have running
-python -m pytest                          # unit tests + live scenarios (1-3 min; the MUD takes ~12 s to boot)
-python -m pytest -m "not live"            # unit tests only (a fake MUD, no Xania needed)
-python -m pytest -m "not slow"            # skip scenarios that wait for regen ticks
-```
-
-Every bot writes a full transcript (`<` received, `>` sent) to `runs/<timestamp>/<Name>.log`.
-
-## Finding bugs
-
-The test MUD runs xania under gdb when gdb is installed where Xania runs, so if xania crashes, the
-report shows the signal, the last lines xania logged, and a backtrace with source files and line numbers. gdb only
-watches: no breakpoints, signals pass straight through. `XANIA_SIM_GDB=0` turns it off.
-
-- **During tests**: a crash fails the test that caused it, with the backtrace, and the MUD restarts (players kept)
-  so the rest of the run carries on.
-- **On purpose**: `hunt` has bots repeat one risky activity until xania crashes or time runs out, then saves the
-  report:
+## Quick start
 
 ```
-python -m xania_sim hunt --mob "angry cave beast" --bots 4 --minutes 10
-# 4 fights in 75 s ... XANIA CRASHED. Report with backtrace: runs/hunt-.../xania-crash.txt
+python -m xania_sim smoke                 # start a test MUD, create a bot, look around, quit
+python -m pytest -m "not live"            # unit tests, against a fake MUD: no Xania needed
+python -m pytest                          # unit tests and the live regression scenarios (a few minutes)
 ```
 
-What the first hunt found: any character with autoloot (on for new players) who kills a mob with something on it
-crashes debug builds of xania. Autoloot runs `get all corpse` (`loot_and_sacrifice_corpse`, src/fight.cpp:565),
-and `do_get` (src/act_obj.cpp:707) passes `arg1[3]` where `arg1` is the 3-character `"all"`: C-era code reading a
-string terminator that a `std::string_view` doesn't have. Typing `get all` in an empty room does the same (line
-648). Release builds don't crash, but read the next character instead, so the guard against looting undroppable
-items with `get all` never applies. Filed as [abraidotti/xania#1](https://github.com/abraidotti/xania/issues/1);
-bots turn autoloot off until it's fixed, and `scenarios/test_live_bugs.py` keeps checking it (it fails, telling you
-to retire it, once the crash is gone).
+Every bot writes a transcript of everything sent and received to `runs/<run>/<Name>.log`.
 
-`python -m xania_sim churn --bots 6 --minutes 15` has bots create characters and quit in a loop until xania
-crashes: it reproduces crashes that need a quit to coincide with something periodic (it found
-[abraidotti/xania#2](https://github.com/abraidotti/xania/issues/2), a use-after-free when a quit lands on a tick).
+## Trials
 
-## In a pipeline: --json and exit codes
+Each trial starts a test MUD, plays, and reports. All of them take `--json` and `--no-record` (below).
 
-Every trial (`smoke`, `hunt`, `churn`, `stage`, `level`, `skill`, `area`) can run unattended:
+| Trial | What it does |
+|---|---|
+| `smoke` | One bot creates a character, looks around and quits: is the build playable? |
+| `hunt --mob "angry cave beast" --minutes 10` | Bots fight one kind of mob over and over until xania crashes or time runs out |
+| `churn --bots 6 --minutes 15` | Bots create characters and quit in a loop, for crashes that need a quit to coincide with something periodic |
+| `lobby` | A careless player presses Enter at each login prompt, and checks xania survives each one |
+| `skill "magic missile" --levels 20` | Each class that learns the skill practises it and uses it in fights, at the level it's learned (and any `--levels`) |
+| `area TrollsDen.are` | A careful player of each class plays the area at five levels around its range |
+| `stage Hilda --level 40 --kit best` | Puts one bot on stage at a level, with a gear kit and skills, and reports what didn't go on |
+| `level Hilda --goal 5 --test-mud` | One bot levels on its own for a while, survival first |
+
+**`skill`** measures the success rate, damage against Explorer's prediction (from level 20, where the game shows
+damage amounts), mana, the practice and use gains, and the messages seen. It reports a class that can't use or
+practise the skill at the level it's learned, and a use that gets no reply at all.
+
+**`area`** plays at low-5, low, median, high and high+5. The range comes from the area's header (or its mobs'
+levels, without one), and median is its combat mobs' median level. At each level the classes play at once, each
+for `--minutes`: they explore every room they can safely reach, fight the mobs that spawn there and are predicted
+safe, loot the corpses and sell what they found. `report.md` in the run folder puts levels and classes side by
+side, seen against predicted: rooms reached, kills, deaths and flees, HP lost per kill, XP per minute, gold. It
+reports a careful player dying inside the area's own range, and rooms the map says can be reached that no bot
+reached. `--cut-down` loads only that area plus Limbo, Midgaard, Mud School, the helps and socials (for a new area
+not linked in yet). `--quick` runs one class at one level for 1.5 minutes, as a check before a long run, and
+`--fail-fast` stops after a level inside the range where nobody managed a kill.
+
+## Reading the results
+
+**On the command line.** Each trial ends with a summary. With `--json` it prints the full result on stdout instead:
+the trial, the Xania commit, measurements, findings, and each activity's outcome in the game's own words. The exit
+code is **0** if nothing new turned up, **1** if a new finding did, and **2** if the trial couldn't run (no build,
+the MUD wouldn't start). That makes a trial usable as a check in a script or CI:
 
 ```
 python -m xania_sim --xania /path/to/xania churn --minutes 5 --json > result.json
-echo $?    # 0 clean, 1 new findings, 2 couldn't run
 ```
 
-- `--json` prints the result on stdout (schema in `xania_sim/record/result.py`: the trial, the Xania commit,
-  measurements, findings with their status, each activity's outcome with the game's own words, and paths to
-  transcripts and crash reports); the human summary goes to stderr.
-- The exit code is **0** when nothing new turned up, **1** when there's a finding that isn't marked known or ignored
-  (`python -m xania_sim findings SIG --status known`), and **2** when the trial couldn't run (no build, the MUD
-  wouldn't start, staging failed). A known crash that reproduces is listed but doesn't fail the run.
-- `--xania PATH` (before the command) tests another checkout; `--no-record` keeps the run out of the lore database.
-
-## Reading and sharing what runs found: the dispatch
-
-Hunts and live test sessions record themselves (runs and findings) in the lore database. A finding is one problem
-however often it's seen: a crash is identified by its signal and the first function in Xania's own source, so the
-`get all` and autoloot triggers above are one finding with two kinds of occurrence. xania's own `[*****] BUG:` log
-lines become findings too. Each keeps every occurrence (when, which game commit, backtrace, the bots' last
-transcript lines), a way to reproduce it, a status and an optional issue link.
+**Findings.** Runs and findings are kept in `state/lore.db` (SQLite). A finding is one problem however often it
+recurs: a crash is identified by its signal (or sanitizer error) and the first function in Xania's own source, and
+xania's `[*****] BUG:` log lines become findings too. Each keeps every occurrence: when, which commit, the
+backtrace, the bots' last transcript lines, and a way to reproduce it. A finding marked `known` (say, once it has
+an issue) still shows up but no longer fails a run.
 
 ```
-python -m xania_sim report                          # latest runs and findings in the terminal
-python -m xania_sim findings do_get --link https://github.com/abraidotti/xania/issues/1
-python -m xania_sim findings do_get --status known  # new | known | ignored (new ones lead the headlines)
-python -m xania_sim dispatch                        # build the website locally (build/dispatch/index.html)
-python -m xania_sim publish                         # push it to the dispatch branch and deploy to GitHub Pages
+python -m xania_sim report                                     # latest runs and findings
+python -m xania_sim findings do_get --status known --link URL  # mark one, and link its issue
+python -m xania_sim status                                     # each bot's level, xp, kills, deaths, time played
 ```
 
-The published dispatch is at **https://abraidotti.github.io/xania-sim/**: headlines, a card per finding (each
-with its own page, a stable link to share), and the run log. `publish` commits the site to the `dispatch` branch
-(never to `main`) and runs the [Dispatch workflow](.github/workflows/dispatch.yml), which deploys it. Only test
-MUD runs are recorded, and home directories in backtraces are shortened to `~/`.
+**The dispatch** is a small website of the findings (one page each, with a stable link), the run log, and each
+bot's progress beside Explorer's predictions: https://abraidotti.github.io/xania-sim/. `dispatch` builds it
+locally and `publish` deploys it.
 
-## Shared lore
-
-```
-python -m xania_sim lore                  # scan the game repo's skills/spells into the shared lore; show what changed
-python -m xania_sim lore fireball --level 25   # one ability's facts, fingerprint and status for a level band
-```
-
-The lore is shared by all bots: what the source says about each skill and spell, plus what bots observe when they
-use them. Each ability is fingerprinted (its skill-table entry and spell function, comments and spacing ignored),
-so a new or rebalanced spell shows up as new or changed and only its observations start over. Bots claim an
-ability and level band before experimenting, so the work isn't duplicated.
+**While a trial runs**, `runs/<run>/progress.jsonl` gets a line per step (also printed to stderr), so a long run can
+be followed with `tail`, and one that died shows where it stopped. xania's log and any crash reports are saved in
+the same folder.
 
 ## Writing a scenario
 
@@ -136,162 +112,55 @@ async def test_mage_starts_with_magic_missile(new_bot):
     assert r.has("magic missile")
 ```
 
-- `bot.do(command)` sends one command and returns a `Response` with `text`, `lines`, `has(regex)` and the
-  `prompt` that ended it (hp, mana, moves with maxima, xp, gold and wait state). Long output is paged through.
-- The rule behind it: one command at a time, then wait for the prompt. Bots set the prompt `<bot ...>` when they
-  log in, so the end of each command's output is unambiguous. Sending faster would trip Xania's input-flood kick.
-  The MUD also prompts on its own (regen ticks, combat rounds, other players), so pass `expect=` (a regex the
-  reply must contain) when it matters: `bot.do("north", expect=r"^\[Exits:|Alas")` reads past stray prompts
-  until the real reply arrives, and returns `complete=False` if it never does.
-- Getting around: `Navigator(bot, world, avoid=danger_rooms(world, level))` gives `locate()`, `walk_to(vnum)` and
-  `explore(area)`. Routes come from Explorer's map; rooms are recognised as the bot arrives (name, first line of
-  description, exits, plus where the move should have led, since about 600 room names are shared); locked doors and
-  other refusals are routed around; tiredness means a rest; a lost bot recalls to the temple.
-- Names: the MUD refuses names that match a mob keyword. The `names` fixture (and `xania_sim.names.bot_names`)
-  hands out acceptable ones.
+`bot.do(command)` sends one command and returns its reply: `text`, `lines`, `has(regex)` and the `prompt` that
+ended it (HP, mana, moves, XP, gold, wait state). Because the MUD also prompts on its own (ticks, combat rounds,
+other players), pass `expect=` when it matters: `bot.do("north", expect=r"^\[Exits:|Alas")` reads past stray
+prompts until the real reply arrives.
 
-## Levelling bots
+## How it works
 
-```
-python -m xania_sim level Hilda --goal 5                     # a knight that levels on its own, survival first
-python -m xania_sim level Hilda --test-mud --port 9100       # the same on an isolated test MUD
-```
+**The test MUD.** Each run starts its own doorman and xania on their own port, with an empty data directory, from
+your build. If gdb is installed, xania runs under it: gdb only watches, but when xania dies the report has the
+signal, xania's last log lines and a backtrace. Builds with AddressSanitizer report their own stacks. `hunt` and
+`churn` stop at the first crash, since that's what they're for; the area trial restarts the MUD after a crash
+already marked `known` and carries on.
 
-Bots log in with the password `botpass1` unless you pass `--password`; a new name creates the character.
+**Setting the stage.** An immortal "director" bot sets up what a test needs, so it can start where a real player
+would be: it advances a character to a level, sets its skills, gives it a kit of gear (the best in the world, what
+shops sell, what lies around, or nothing) and moves it into place. The bot then puts the gear on itself, and the
+report says, in the game's words, what didn't fit. From there, the bots only play.
 
-Levelling is survival first: a bot only starts fights predicted (by Explorer, then by the shared fight log once bots
-have seen enough) to cost well under half its HP, skips rooms where others could join in, flees early (standing up
-first if it's been tripped or bashed), rests at the temple, and never goes back to a room it fled from or died in.
-If something attacks it while it rests it stops and escapes (praying to recall if it has no moves left to run),
-and one death to a mob takes that mob off the list for its level band. At the start and after every level it
-walks to the nearest guildmaster and spends its practice sessions on its class's priorities (`activities/practice.py`).
+**Playing like a client.** A bot sends one command, then waits for its prompt, which it sets on login to a fixed
+format, so the end of each reply is unambiguous and it never trips the input-flood kick. Everything it reads is
+parsed into events (kills, deaths and their killer, XP, levels, skill gains, loot, gold) using Xania's own
+messages.
 
-## Testing skills and areas
+**Getting around.** Routes come from Explorer's map. As a bot arrives it recognises the room by its name, the first
+line of its description and its exits, plus where the move should have led (about 600 room names are shared). It
+routes around locked doors and rooms its level can't enter, rests when tired, recalls when lost, and gives up on a
+walk that goes round in circles.
 
-```
-python -m xania_sim skill bash                          # every class that learns it, at the level it's learned
-python -m xania_sim skill "magic missile" --levels 20   # also at level 20, where damage amounts show
-python -m xania_sim area TrollsDen.are                  # careful players of each class around the area's range
-python -m xania_sim area NewArea.are --cut-down         # just this area, Limbo, Midgaard, Mud School, helps, socials
-```
+**Fighting carefully.** The careful player only starts fights predicted to cost well under half its HP: by
+Explorer's model at first, then by what bots have seen once there's enough. It skips rooms where others could join
+in, fights back when something attacks it and the fight is safe (otherwise it flees), and never goes back to a room
+it fled from. Mages and clerics are judged with their spells and buffs; in fights they buff first, open with their
+best move and keep enough mana to escape.
 
-**`skill`** stages a bot of each class that learns the skill (Explorer's class tables), at the level it's learned
-and any `--levels`, with shop gear and its class skills. It practises the skill from 1%, then uses it at 75% in
-fights against a mob it's predicted to beat, with tactics limited to that one skill. Anything that isn't for
-fights, it uses on itself. It measures the success rate, the damage against Explorer's prediction (from level 20,
-where amounts show), mana, the practice and use gains, and the messages seen. It reports a finding if a class
-can't use or practise the skill at the level it's learned, or if a use gets no reply at all.
+**Shared lore.** The bots share what they know: what the source says about each skill and spell, and what they've
+seen when using them. Each ability is fingerprinted from its skill-table entry and spell function, so a rebalanced
+spell shows up as changed and its observations start over.
 
-**`area`** plays an area at five levels: low-5, low, median, high and high+5. They come from the area's header
-range, or from its mob levels when it has none, and median is the median level of its combat mobs. At each
-level, one careful player per class (shop kit, natural skills; `--kit` and `--classes` to change) starts at the
-area's entrance and plays for `--minutes`, all classes at once. Each one explores every room it can safely reach,
-fights mobs that spawn there and are predicted safe, loots corpses by hand (autoloot stays off, xania#1), and
-sells the loot at a shop in the area or the nearest one. `report.md` in the run folder puts levels and classes
-side by side, with what was seen against Explorer's predictions:
-- rooms reached
-- kills, deaths and flees, against the number of safe mobs
-- HP lost per kill, seen and predicted
-- xp per minute
-- gold
+## What's next
 
-It reports a finding for a careful player who dies at a level inside the area's own range, and for rooms that the
-map says can be reached but no bot reached.
+Players in groups, in the area trial; more careless and awkward players (driving every command with odd
+arguments); balance trials across classes and races; and comparing two commits of Xania side by side, so a change
+can be checked against the version before it.
 
-`--cut-down` loads a world of only the area plus the hubs, through a temporary `area.lst` for the test MUD and a
-matching copy for Explorer. Use it for a new area that isn't linked in yet, or to keep other areas out of a test.
-
-Long trials guard their own time:
-- **Heartbeat:** every step goes to `progress.jsonl` in the run folder and to stderr, so you can follow a run with
-  `tail` and see where a dead one stopped.
-- **Hard caps:** each bot's session ends at its time plus 90 s, whatever it's doing. A wait for moves never takes
-  more than half the session. Exploring stops starting new walks halfway through, without cutting a fight short.
-- **Loop guard:** a walk that keeps re-planning from the same room, or keeps recalling, gives up and is reported
-  ("looping at room 3001").
-- **Crash watcher:** xania is checked every 5 s while bots play.
-- **Verdicts:** every level gets one, `ok: 5 kills` or `unproductive: no kills; escapes fled 5; 1 cut off`.
-  `--fail-fast` stops the trial after an unproductive level inside the area's range (outside it, an empty level is
-  expected).
-- **Preflight:** `--quick` runs one class at the first level for 1.5 minutes, to check everything works before a
-  long run.
-
-## Progress: what each bot has done
-
-```
-python -m xania_sim status                # every bot: level, xp, gold, kills, deaths, flees, hours played
-python -m xania_sim status lvlknia        # one bot's areas and recent events too
-```
-
-Everything a bot reads is parsed into events (kills, deaths with their killer, xp, levels, skill gains, loot, gold,
-tells, says, channels, follows, groups; the messages are Xania's own, with file:line in `record/events.py`) and stored
-with the room and area it happened in, next to prompt snapshots (HP, mana, moves, xp, gold) taken as they change.
-The dispatch gets a bots table and a page per bot: level over time, where it fought, what it did lately, and its
-fights beside Explorer's predictions (`fight.compare`). The tables (`bots`, `events`, `snapshots`, `fights`) are
-plain SQLite in `state/lore.db`, for other tools to read.
-
-## How it fits together
-
-Xania Sim is in layers. Activities are what a player does; players choose activities; trials combine them into
-tests. Other tools (Xania Builder, Xania Companions) build on the activities.
-
-| Layer | Module | What it does |
-|---|---|---|
-| core | `telnet.py` | Connection to doorman: refuses telnet options, strips ANSI, `expect(pattern)` / `send(line)`, transcript |
-| core | `session.py` | `Bot`: the lobby (create or log in, as in `nanny`, xania/src/MudImpl.cpp), then `do(command)` |
-| core | `parsers.py` | Pure parsing (the bot prompt, lines); tested against captured output |
-| core | `server.py` | `TestMud`: its own doorman + xania on its own port with a throwaway data dir (`/tmp/xania-sim/<port>`) |
-| core | `director.py` | An immortal on the test MUD that sets the stage: levels, skills, objects, moving players |
-| core | `names.py` | Names the MUD accepts (`validate_player_name`) |
-| core | `world.py` | Explorer's world, loaded from the checkout the test MUD runs |
-| core | `repo.py` | `GameRepo`: the game's git repo (`XANIA_SIM_XANIA`): commit, dirty state, is the build older than the source |
-| activities | `move.py` | `Navigator`: where am I, safe routes (`danger_rooms` from aggressive spawns + `predict_fight`), walking, exploring |
-| activities | `fight.py` | Recognising mobs in a room, `safe_targets`, `fight()` round by round, `recover()`, the shared `FightLog`, `compare` |
-| activities | `practice.py` | Practice: reads the practice table, picks skills by class priority, finds a practice mob |
-| activities | `tactics.py` | Skills and spells in fights: buffs first, an opener, the best action each round, a mana reserve kept for escape |
-| activities | `items.py` | Objects by the name the game shows: keyword, level, slots, how much they're worth wearing |
-| activities | `loot.py` | Looking in a corpse or container and taking what's in it, one item at a time (never `get all`: xania#1) |
-| activities | `gear.py` | Inventory, equipment, wearing and wielding, and putting on whatever beats what's worn, slot by slot |
-| activities | `trade.py` | Finding a shop, its stock, buying, selling, valuing |
-| activities | `group.py` | Following, grouping, reading the group, splitting gold |
-| activities | `death.py` | Dying, walking back from the altar and taking everything back from the right corpse |
-| players | `careful.py` | `Leveller`: the survival-first player: go where the safe fights are, fight one at a time, rest, flee |
-| players | `run.py` | The `level` command: one careful player for a while, recorded in the event log |
-| record | `events.py` | `parse(text)` into events, `Recorder` (watches a bot, stores events + snapshots), `Progress` (reads them) |
-| record | `findings.py` | Runs and findings (crashes with gdb or AddressSanitizer stacks), deduplicated by signature |
-| record | `rooms.py` | Parsing room views (`room_look`, act_info.cpp) and recognising rooms by fingerprint |
-| record | `scan.py` | Skills/spells from the repo's source (levels via Explorer; entry text, target, position read here) + fingerprints |
-| record | `store.py` | `Lore`: shared SQLite (`state/lore.db`): abilities and their changes, raw observations, claims, status per band |
-| trials | `churn.py`, `hunt.py` | Stress: bots create and quit, or fight one mob, until xania crashes |
-| trials | `skill.py` | One skill or spell, class by class: practise it, use it, measure it against the prediction |
-| trials | `area.py` | One area at five levels around its range, a careful player per class; side-by-side report |
-| record | `result.py` | `Outcome` (one activity) and `TrialResult` (one run): the JSON and exit codes other tools read |
-| trials | `commands.py` | The CLI's trials, each returning a `TrialResult`; recording into the lore database happens here |
-| report | `dispatch.py` | The dispatch website: findings, runs, bots, predicted vs seen |
-| setup | `stage.py` | Puts a bot on stage: level, skills, a gear kit to wear; reports what went on in the game's own words |
-| setup | `kits.py` | Gear kits per level, class, alignment and race: `best`, `best-ac`, `best-hitdam`, `shop`, `floor`, `bare` |
-| setup | `loadouts.py` | Skill loadouts: `none`, `passives`, `class`, `natural`, or a TOML file; which skills a class can use when |
-
-`scenarios/` holds the live regression suite.
-
-## Roadmap
-
-Scope: Xania Sim simulates players, good and bad, through the client. Testing code directly (unit tests, fuzzing
-functions, checking files) belongs to Xania Builder, which will use Sim's scenarios to check its own changes.
-
-- **M1 (done)**: telnet, lobby, prompt, isolated test MUD, smoke scenarios (now the regression suite).
-- **M2 (done)**: navigation with Explorer's map (`locate`, `walk_to`, `explore(area)`), danger-aware.
-- **M3a (done)**: the game repo (version, build check), skill/spell scan with fingerprints, shared lore (SQLite).
-- **M3 (done)**: survival and levelling: pick safe fights with `api.predict_fight`, rest, flee, recall.
-- **M4 (done)**: event log (SQLite), `xania_sim status`, progress pages on the dispatch beside Explorer's predictions.
-- **M5-M8**: companionship, personas, legends and the roster runner, now [Xania Companions](https://github.com/abraidotti/xania-companions).
-- **Done since**: the director and staging (bots at any level with chosen gear and skills), combat tactics, the
-  activities layer, `--json` and exit codes, the skill and area trials.
-- **Next**: grouped players in the area trial; careless, abusive and exploiting players (fuzzing commands,
-  flooding, exploit hunts); balance trials; A/B commit comparison, for Xania Builder's gate.
+Character bots that play beside you and write their own legends are a separate project built on Xania Sim:
+[Xania Companions](https://github.com/abraidotti/xania-companions).
 
 ## Platform notes
 
-Xania Sim only needs Python 3.12+ and a machine that can build and run Xania; bots talk to the MUD over telnet,
-so they can run anywhere that reaches it. If Xania runs under WSL on Windows, the sim finds it there:
-`XANIA_SIM_DISTRO` names the distro, and the test MUD keeps a `wsl.exe` session attached
-while it runs (WSL stops a distro that has none).
+Xania Sim needs Python 3.12+ and a machine that can build and run Xania; the bots only need to reach the MUD over
+telnet. If Xania runs under WSL on Windows, Xania Sim finds it there: `XANIA_SIM_DISTRO` names the distro, and the
+test MUD keeps a `wsl.exe` session attached while it runs (WSL stops a distro that has none).
