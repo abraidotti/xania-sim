@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>xania crashed (AddressSanitizer: heap-use-after-free) in Descriptor::person (Descriptor.hpp)</title><style>
+:root { --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --card: #ffffff; --line: #e4e1da; --accent: #8a3b12;
+        --high: #b42318; --medium: #b54708; --low: #475467; --code: #f3f1ec; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161513; --fg: #ecebe7; --muted: #a3a19b; --card: #1f1e1b; --line: #34322d; --accent: #f0a46b;
+          --high: #f97066; --medium: #fdb022; --low: #98a2b3; --code: #26241f; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+a { color: var(--accent); }
+h1 { font-size: 1.9rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; margin: 36px 0 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.sub { color: var(--muted); margin: 0 0 8px; }
+.headlines li { margin: 4px 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 12px 0; }
+.card h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.badge { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 1px 8px; border-radius: 999px;
+         border: 1px solid currentColor; margin-right: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+.high { color: var(--high); } .medium { color: var(--medium); } .low { color: var(--low); }
+.status-new { color: var(--accent); }
+pre { background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+      overflow-x: auto; font-size: 0.8rem; line-height: 1.45; }
+code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+.scroll { overflow-x: auto; }
+details { margin: 8px 0; } summary { cursor: pointer; color: var(--muted); }
+footer { margin-top: 48px; color: var(--muted); font-size: 0.85rem; }
+.chart { width: 100%; height: auto; display: block; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font-size: 11px; }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.chart .dot { fill: var(--accent); stroke: var(--card); stroke-width: 2; }
+.chart .hit { fill: transparent; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.journal p { margin: 4px 0; }
+</style></head><body><main><p class='sub'><a href='../index.html'>Xania Sim dispatch</a></p><h1>xania crashed (AddressSanitizer: heap-use-after-free) in Descriptor::person (Descriptor.hpp)</h1><div class="card"><h3><a href="../findings/de2564f609.html">xania crashed (AddressSanitizer: heap-use-after-free) in Descriptor::person (Descriptor.hpp)</a></h3><div class="meta"><span class="badge high">high</span><span class="badge status-known">known</span>seen 1×, first 2026-11-10 23:47, last 2026-11-10 23:47 on <code>82171fa443</code> · <a href="https://github.com/abraidotti/xania/issues/2">issue</a></div><p>Access: Descriptor::person (Descriptor.hpp:162) &lt;- Char::player (Char.hpp:220) &lt;- get_skill_level (skills.cpp:569) &lt;- Char::get_skill (Char.cpp:226) &lt;- mana_gain (update.cpp:389) &lt;- char_update (update.cpp:678)</p></div><h2>What happened</h2><pre>Access: Descriptor::person (Descriptor.hpp:162) &lt;- Char::player (Char.hpp:220) &lt;- get_skill_level (skills.cpp:569) &lt;- Char::get_skill (Char.cpp:226) &lt;- mana_gain (update.cpp:389) &lt;- char_update (update.cpp:678)
+Freed by: DescriptorList::reap_closed (DescriptorList.cpp:8) &lt;- MudImpl::game_loop (MudImpl.cpp:327) &lt;- main (main.cpp:23)
+Allocated by: DescriptorList::create (DescriptorList.cpp:18) &lt;- MudImpl::handle_doorman_packet (MudImpl.cpp:487) &lt;- MudImpl::game_loop (MudImpl.cpp:291) &lt;- main (main.cpp:23)</pre><h2>Reproduce</h2><pre>python -m xania_sim area &#x27;TrollsDen.are&#x27;</pre><h2>Occurrences (1)</h2><div class='card'><div class='meta'>2026-11-10 23:47 · run 20261110-234744-area · <code>82171fa443</code></div><p>Troll Den, level 10 (10)</p><p><code>Descriptor::person</code> Descriptor.hpp:162 ← <code>Char::player</code> Char.hpp:220 ← <code>get_skill_level</code> skills.cpp:569 ← <code>Char::get_skill</code> Char.cpp:226 ← <code>mana_gain</code> update.cpp:389 ← <code>char_update</code> update.cpp:678</p><details><summary>Backtrace and xania's last log lines</summary><pre>2026-11-11 04:46:40Z :: TICK
+2026-11-11 04:47:10Z :: TICK
+2026-11-11 04:47:40Z :: Areae has quit.
+2026-11-11 04:47:40Z :: Closing link to channel 4.
+2026-11-11 04:47:40Z :: Areaf has quit.
+2026-11-11 04:47:40Z :: Closing link to channel 3.
+2026-11-11 04:47:40Z :: TICK
+=================================================================
+==1038==ERROR: AddressSanitizer: heap-use-after-free on address 0x7d2ff5d3b7a8 at pc 0x555556fe02b8 bp 0x7fffffffc6d0 sp 0x7fffffffc6c0
+READ of size 8 at 0x7d2ff5d3b7a8 thread T0
+    #0 0x555556fe02b7 in Descriptor::person() const ~/xania/src/Descriptor.hpp:162
+    #1 0x5555570c9d86 in Char::player() const ~/xania/src/Char.hpp:220
+    #2 0x5555575aebed in get_skill_level(Char const*, int) ~/xania/src/skills.cpp:569
+    #3 0x5555576bc32b in Char::get_skill(int) const ~/xania/src/Char.cpp:226
+    #4 0x555557624f8c in mana_gain ~/xania/src/update.cpp:389
+    #5 0x555557630ee8 in char_update() ~/xania/src/update.cpp:678
+    #6 0x555557636eab in update_handler(Mud&amp;) ~/xania/src/update.cpp:882
+    #7 0x5555570218e3 in MudImpl::game_loop() ~/xania/src/MudImpl.cpp:332
+    #8 0x555556fd2630 in main ~/xania/src/main.cpp:23
+    #9 0x7ffff682a600 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:59
+    #10 0x7ffff682a717 in __libc_start_main_impl ../csu/libc-start.c:360
+    #11 0x555556fd1984 in _start (~/xania/install/bin/xania+0x1a7d984) (BuildId: dc389066e01e5035d647bf865b807777d961d23d)
+
+0x7d2ff5d3b7a8 is located 360 bytes inside of 376-byte region [0x7d2ff5d3b640,0x7d2ff5d3b7b8)
+freed by thread T0 here:
+    #0 0x7ffff792d89f in operator delete(void*, unsigned long) ../../../../src/libsanitizer/asan/asan_new_delete.cpp:190
+    #1 0x5555570768d9 in std::__new_allocator&lt;std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt; &gt;::deallocate(std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt;*, unsigned long) /usr/include/c++/15/bits/new_allocator.h:172
+    #2 0x55555706cb76 in std::allocator&lt;std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt; &gt;::deallocate(std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt;*, unsigned long) /usr/include/c++/15/bits/allocator.h:215
+    #3 0x55555706cb76 in std::allocator_traits&lt;std::allocator&lt;std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt; &gt; &gt;::deallocate(std::allocator&lt;std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt; &gt;&amp;, std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt;*, unsigned long) /usr/include/c++/15/bits/alloc_traits.h:649
+    #4 0x55555706cb76 in std::__detail::_Hashtable_alloc&lt;std::allocator&lt;std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt; &gt; &gt;::_M_deallocate_node_ptr(std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt;*) /usr/include/c++/15/bits/hashtable_policy.h:1583
+    #5 0x555557066380 in std::__detail::_Hashtable_alloc&lt;std::allocator&lt;std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt; &gt; &gt;::_M_deallocate_node(std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt;*) /usr/include/c++/15/bits/hashtable_policy.h:1573
+    #6 0x5555577aa63c in std::_Hashtable&lt;unsigned int, std::pair&lt;unsigned int const, Descriptor&gt;, std::allocator&lt;std::pair&lt;unsigned int const, Descriptor&gt; &gt;, std::__detail::_Select1st, std::equal_to&lt;unsigned int&gt;, std::hash&lt;unsigned int&gt;, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits&lt;false, false, true&gt; &gt;::_M_erase(unsigned long, std::__detail::_Hash_node_base*, std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt;*) /usr/include/c++/15/bits/hashtable.h:2590
+    #7 0x5555577a87d9 in std::_Hashtable&lt;unsigned int, std::pair&lt;unsigned int const, Descriptor&gt;, std::allocator&lt;std::pair&lt;unsigned int const, Descriptor&gt; &gt;, std::__detail::_Select1st, std::equal_to&lt;unsigned int&gt;, std::hash&lt;unsigned int&gt;, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits&lt;false, false, true&gt; &gt;::erase(std::__detail::_Node_const_iterator&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false, false&gt;) /usr/include/c++/15/bits/hashtable.h:2565
+    #8 0x5555577a8062 in std::_Hashtable&lt;unsigned int, std::pair&lt;unsigned int const, Descriptor&gt;, std::allocator&lt;std::pair&lt;unsigned int const, Descriptor&gt; &gt;, std::__detail::_Select1st, std::equal_to&lt;unsigned int&gt;, std::hash&lt;unsigned int&gt;, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits&lt;false, false, true&gt; &gt;::erase(std::__detail::_Node_iterator&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false, false&gt;) /usr/include/c++/15/bits/hashtable.h:1158
+    #9 0x5555577a7b3b in std::unordered_map&lt;unsigned int, Descriptor, std::hash&lt;unsigned int&gt;, std::equal_to&lt;unsigned int&gt;, std::allocator&lt;std::pair&lt;unsigned int const, Descriptor&gt; &gt; &gt;::erase(std::__detail::_Node_iterator&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false, false&gt;) /usr/include/c++/15/bits/unordered_map.h:817
+    #10 0x5555577a7120 in DescriptorList::reap_closed() ~/xania/src/DescriptorList.cpp:8
+    #11 0x555557021881 in MudImpl::game_loop() ~/xania/src/MudImpl.cpp:327
+    #12 0x555556fd2630 in main ~/xania/src/main.cpp:23
+    #13 0x7ffff682a600 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:59
+    #14 0x7ffff682a717 in __libc_start_main_impl ../csu/libc-start.c:360
+    #15 0x555556fd1984 in _start (~/xania/install/bin/xania+0x1a7d984) (BuildId: dc389066e01e5035d647bf865b807777d961d23d)
+
+previously allocated by thread T0 here:
+    #0 0x7ffff792c73f in operator new(unsigned long) ../../../../src/libsanitizer/asan/asan_new_delete.cpp:109
+    #1 0x5555577aef8f in std::__new_allocator&lt;std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt; &gt;::allocate(unsigned long, void const*) /usr/include/c++/15/bits/new_allocator.h:151
+    #2 0x5555577aadd3 in std::allocator&lt;std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt; &gt;::allocate(unsigned long) /usr/include/c++/15/bits/allocator.h:203
+    #3 0x5555577aadd3 in std::allocator_traits&lt;std::allocator&lt;std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt; &gt; &gt;::allocate(std::allocator&lt;std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt; &gt;&amp;, unsigned long) /usr/include/c++/15/bits/alloc_traits.h:614
+    #4 0x5555577aadd3 in std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt;* std::__detail::_Hashtable_alloc&lt;std::allocator&lt;std::__detail::_Hash_node&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false&gt; &gt; &gt;::_M_allocate_node&lt;std::piecewise_construct_t const&amp;, std::tuple&lt;unsigned int&amp;&gt;, std::tuple&lt;unsigned int&amp;, Mud&amp;&gt; &gt;(std::piecewise_construct_t const&amp;, std::tuple&lt;unsigned int&amp;&gt;&amp;&amp;, std::tuple&lt;unsigned int&amp;, Mud&amp;&gt;&amp;&amp;) /usr/include/c++/15/bits/hashtable_policy.h:1551
+    #5 0x5555577a8c7e in std::pair&lt;std::__detail::_Node_iterator&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false, false&gt;, bool&gt; std::_Hashtable&lt;unsigned int, std::pair&lt;unsigned int const, Descriptor&gt;, std::allocator&lt;std::pair&lt;unsigned int const, Descriptor&gt; &gt;, std::__detail::_Select1st, std::equal_to&lt;unsigned int&gt;, std::hash&lt;unsigned int&gt;, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits&lt;false, false, true&gt; &gt;::_M_emplace_uniq&lt;std::piecewise_construct_t const&amp;, std::tuple&lt;unsigned int&amp;&gt;, std::tuple&lt;unsigned int&amp;, Mud&amp;&gt; &gt;(std::piecewise_construct_t const&amp;, std::tuple&lt;unsigned int&amp;&gt;&amp;&amp;, std::tuple&lt;unsigned int&amp;, Mud&amp;&gt;&amp;&amp;) /usr/include/c++/15/bits/hashtable.h:2346
+    #6 0x5555577a832a in std::pair&lt;std::__detail::_Node_iterator&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false, false&gt;, bool&gt; std::_Hashtable&lt;unsigned int, std::pair&lt;unsigned int const, Descriptor&gt;, std::allocator&lt;std::pair&lt;unsigned int const, Descriptor&gt; &gt;, std::__detail::_Select1st, std::equal_to&lt;unsigned int&gt;, std::hash&lt;unsigned int&gt;, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits&lt;false, false, true&gt; &gt;::emplace&lt;std::piecewise_construct_t const&amp;, std::tuple&lt;unsigned int&amp;&gt;, std::tuple&lt;unsigned int&amp;, Mud&amp;&gt; &gt;(std::piecewise_construct_t const&amp;, std::tuple&lt;unsigned int&amp;&gt;&amp;&amp;, std::tuple&lt;unsigned int&amp;, Mud&amp;&gt;&amp;&amp;) /usr/include/c++/15/bits/hashtable.h:1029
+    #7 0x5555577a7e86 in std::pair&lt;std::__detail::_Node_iterator&lt;std::pair&lt;unsigned int const, Descriptor&gt;, false, false&gt;, bool&gt; std::unordered_map&lt;unsigned int, Descriptor, std::hash&lt;unsigned int&gt;, std::equal_to&lt;unsigned int&gt;, std::allocator&lt;std::pair&lt;unsigned int const, Descriptor&gt; &gt; &gt;::emplace&lt;std::piecewise_construct_t const&amp;, std::tuple&lt;unsigned int&amp;&gt;, std::tuple&lt;unsigned int&amp;, Mud&amp;&gt; &gt;(std::piecewise_construct_t const&amp;, std::tuple&lt;unsigned int&amp;&gt;&amp;&amp;, std::tuple&lt;unsigned int&amp;, Mud&amp;&gt;&amp;&amp;) /usr/include/c++/15/bits/unordered_map.h:442
+    #8 0x5555577a748d in DescriptorList::create(unsigned int, Mud&amp;) ~/xania/src/DescriptorList.cpp:18
+    #9 0x55555702800a in MudImpl::handle_doorman_packet(tagPacket const&amp;, std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;) ~/xania/src/MudImpl.cpp:487
+    #10 0x555557020798 in MudImpl::game_loop() ~/xania/src/MudImpl.cpp:291
+    #11 0x555556fd2630 in main ~/xania/src/main.cpp:23
+    #12 0x7ffff682a600 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:59
+    #13 0x7ffff682a717 in __libc_start_main_impl ../csu/libc-start.c:360
+    #14 0x555556fd1984 in _start (~/xania/install/bin/xania+0x1a7d984) (BuildId: dc389066e01e5035d647bf865b807777d961d23d)
+
+SUMMARY: AddressSanitizer: heap-use-after-free ~/xania/src/Descriptor.hpp:162 in Descriptor::person() const</pre></details><details><summary>Areah's transcript (last lines)</summary><pre>23:47:30 &lt; You are: defenseless against magic.
+23:47:30 &lt; 
+23:47:30 &lt; Strength: 14 (14)       Intelligence: 14 (14)   Wisdom: 14 (14)
+23:47:30 &lt; Dexterity: 14 (14)      Constitution: 17 (17)
+23:47:30 &lt; Practices: 14           Training sessions: 12
+23:47:30 &lt; Alignment: neutral (0).
+23:47:30 &lt; 
+23:47:30 &lt; &lt;bot 11/154 109/109 56/154 10178 252 0&gt;
+23:47:30 &lt; 
+23:47:42 &gt; quit
+23:47:42 &lt; 
+23:47:42 &lt; Areag appears in the room.
+23:47:42 &lt; 
+23:47:42 &lt; &lt;bot 11/154 109/109 56/154 10178 252 0&gt;
+23:47:42 &lt; 
+23:47:42 &lt; Areag leaves south.
+23:47:42 &lt; 
+23:47:42 &lt; &lt;bot 11/154 109/109 56/154 10178 252 0&gt;
+23:47:42 &lt; 
+23:47:42 &lt; Areag appears in the room.
+23:47:42 &lt; 
+23:47:42 &lt; &lt;bot 11/154 109/109 56/154 10178 252 0&gt;
+23:47:42 &lt; 
+23:47:42 &lt; Areae has left reality for the game.
+23:47:42 &lt; ### Areae departs, seeking another reality.
+23:47:42 &lt; 
+23:47:42 &lt; &lt;bot 11/154 109/109 56/154 10178 252 0&gt;
+23:47:42 &lt; 
+23:47:42 &lt; Doorman has lost connection to Xania.
+23:47:42 &lt; Attempting to reconnect to Xania.</pre></details><details><summary>Areag's transcript (last lines)</summary><pre>23:47:40 &lt; Level: 10               Age: 17 years (0 hours)
+23:47:40 &lt; Race: human             Class: knight
+23:47:40 &lt; Sex: neutral            Position: standing
+23:47:40 &lt; Items: 15 / 58          Weight: 49 / 205
+23:47:40 &lt; Gold: 0
+23:47:40 &lt; Wimpy: 0                Score: 10181 (819 to next level)
+23:47:40 &lt; 
+23:47:40 &lt; Hit: 31 / 110           Mana: 127 / 127         Move: 3 / 154
+23:47:40 &lt; You are: defenseless against piercing.
+23:47:40 &lt; You are: defenseless against bashing.
+23:47:40 &lt; You are: defenseless against slashing.
+23:47:40 &lt; You are: defenseless against magic.
+23:47:40 &lt; 
+23:47:40 &lt; Strength: 17 (17)       Intelligence: 14 (14)   Wisdom: 14 (14)
+23:47:40 &lt; Dexterity: 14 (14)      Constitution: 14 (14)
+23:47:40 &lt; Practices: 14           Training sessions: 12
+23:47:40 &lt; Alignment: neutral (0).
+23:47:40 &lt; 
+23:47:40 &lt; &lt;bot 31/110 127/127 3/154 10181 0 0&gt;
+23:47:40 &lt; 
+23:47:40 &gt; quit
+23:47:40 &lt; 
+23:47:40 &lt; Areae has left reality for the game.
+23:47:40 &lt; ### Areae departs, seeking another reality.
+23:47:40 &lt; 
+23:47:40 &lt; &lt;bot 31/110 127/127 3/154 10181 0 0&gt;
+23:47:40 &lt; 
+23:47:41 &lt; 
+23:47:41 &lt; Doorman has lost connection to Xania.
+23:47:41 &lt; Attempting to reconnect to Xania.</pre></details></div><footer>Made by <a href="https://github.com/abraidotti/xania-sim">xania-sim</a>: bots playing <a href="https://github.com/mattgodbolt/xania">Xania</a>. <a href="../index.html">Dispatch home</a>.</footer></main></body></html>

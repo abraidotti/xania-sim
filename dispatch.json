@@ -1,6 +1,85 @@
 {
- "generated": 1794371559.9926088,
+ "generated": 1794372501.1772869,
  "findings": [
+  {
+   "signature": "crash:asan-heap-use-after-free:Descriptor.hpp:Descriptor::person",
+   "kind": "crash",
+   "title": "xania crashed (AddressSanitizer: heap-use-after-free) in Descriptor::person (Descriptor.hpp)",
+   "severity": "high",
+   "summary": "Access: Descriptor::person (Descriptor.hpp:162) <- Char::player (Char.hpp:220) <- get_skill_level (skills.cpp:569) <- Char::get_skill (Char.cpp:226) <- mana_gain (update.cpp:389) <- char_update (update.cpp:678)\nFreed by: DescriptorList::reap_closed (DescriptorList.cpp:8) <- MudImpl::game_loop (MudImpl.cpp:327) <- main (main.cpp:23)\nAllocated by: DescriptorList::create (DescriptorList.cpp:18) <- MudImpl::handle_doorman_packet (MudImpl.cpp:487) <- MudImpl::game_loop (MudImpl.cpp:291) <- main (main.cpp:23)",
+   "repro": "python -m xania_sim area 'TrollsDen.are'",
+   "first_seen": 1794372464.9269385,
+   "last_seen": 1794372464.9269385,
+   "count": 1,
+   "first_commit": "82171fa4434933217c5995dc45ae730c4c635928",
+   "last_commit": "82171fa4434933217c5995dc45ae730c4c635928",
+   "status": "known",
+   "link": "https://github.com/abraidotti/xania/issues/2",
+   "id": "de2564f609",
+   "occurrences": [
+    {
+     "run": "20261110-234744-area",
+     "at": 1794372464.9269385,
+     "commit": "82171fa4434933217c5995dc45ae730c4c635928",
+     "evidence": {
+      "backtrace": "2026-11-11 04:46:40Z :: TICK\n2026-11-11 04:47:10Z :: TICK\n2026-11-11 04:47:40Z :: Areae has quit.\n2026-11-11 04:47:40Z :: Closing link to channel 4.\n2026-11-11 04:47:40Z :: Areaf has quit.\n2026-11-11 04:47:40Z :: Closing link to channel 3.\n2026-11-11 04:47:40Z :: TICK\n=================================================================\n==1038==ERROR: AddressSanitizer: heap-use-after-free on address 0x7d2ff5d3b7a8 at pc 0x555556fe02b8 bp 0x7fffffffc6d0 sp 0x7fffffffc6c0\nREAD of size 8 at 0x7d2ff5d3b7a8 thread T0\n    #0 0x555556fe02b7 in Descriptor::person() const ~/xania/src/Descriptor.hpp:162\n    #1 0x5555570c9d86 in Char::player() const ~/xania/src/Char.hpp:220\n    #2 0x5555575aebed in get_skill_level(Char const*, int) ~/xania/src/skills.cpp:569\n    #3 0x5555576bc32b in Char::get_skill(int) const ~/xania/src/Char.cpp:226\n    #4 0x555557624f8c in mana_gain ~/xania/src/update.cpp:389\n    #5 0x555557630ee8 in char_update() ~/xania/src/update.cpp:678\n    #6 0x555557636eab in update_handler(Mud&) ~/xania/src/update.cpp:882\n    #7 0x5555570218e3 in MudImpl::game_loop() ~/xania/src/MudImpl.cpp:332\n    #8 0x555556fd2630 in main ~/xania/src/main.cpp:23\n    #9 0x7ffff682a600 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:59\n    #10 0x7ffff682a717 in __libc_start_main_impl ../csu/libc-start.c:360\n    #11 0x555556fd1984 in _start (~/xania/install/bin/xania+0x1a7d984) (BuildId: dc389066e01e5035d647bf865b807777d961d23d)\n\n0x7d2ff5d3b7a8 is located 360 bytes inside of 376-byte region [0x7d2ff5d3b640,0x7d2ff5d3b7b8)\nfreed by thread T0 here:\n    #0 0x7ffff792d89f in operator delete(void*, unsigned long) ../../../../src/libsanitizer/asan/asan_new_delete.cpp:190\n    #1 0x5555570768d9 in std::__new_allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >::deallocate(std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*, unsigned long) /usr/include/c++/15/bits/new_allocator.h:172\n    #2 0x55555706cb76 in std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >::deallocate(std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*, unsigned long) /usr/include/c++/15/bits/allocator.h:215\n    #3 0x55555706cb76 in std::allocator_traits<std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> > >::deallocate(std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >&, std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*, unsigned long) /usr/include/c++/15/bits/alloc_traits.h:649\n    #4 0x55555706cb76 in std::__detail::_Hashtable_alloc<std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> > >::_M_deallocate_node_ptr(std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*) /usr/include/c++/15/bits/hashtable_policy.h:1583\n    #5 0x555557066380 in std::__detail::_Hashtable_alloc<std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> > >::_M_deallocate_node(std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*) /usr/include/c++/15/bits/hashtable_policy.h:1573\n    #6 0x5555577aa63c in std::_Hashtable<unsigned int, std::pair<unsigned int const, Descriptor>, std::allocator<std::pair<unsigned int const, Descriptor> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_erase(unsigned long, std::__detail::_Hash_node_base*, std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>*) /usr/include/c++/15/bits/hashtable.h:2590\n    #7 0x5555577a87d9 in std::_Hashtable<unsigned int, std::pair<unsigned int const, Descriptor>, std::allocator<std::pair<unsigned int const, Descriptor> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::erase(std::__detail::_Node_const_iterator<std::pair<unsigned int const, Descriptor>, false, false>) /usr/include/c++/15/bits/hashtable.h:2565\n    #8 0x5555577a8062 in std::_Hashtable<unsigned int, std::pair<unsigned int const, Descriptor>, std::allocator<std::pair<unsigned int const, Descriptor> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::erase(std::__detail::_Node_iterator<std::pair<unsigned int const, Descriptor>, false, false>) /usr/include/c++/15/bits/hashtable.h:1158\n    #9 0x5555577a7b3b in std::unordered_map<unsigned int, Descriptor, std::hash<unsigned int>, std::equal_to<unsigned int>, std::allocator<std::pair<unsigned int const, Descriptor> > >::erase(std::__detail::_Node_iterator<std::pair<unsigned int const, Descriptor>, false, false>) /usr/include/c++/15/bits/unordered_map.h:817\n    #10 0x5555577a7120 in DescriptorList::reap_closed() ~/xania/src/DescriptorList.cpp:8\n    #11 0x555557021881 in MudImpl::game_loop() ~/xania/src/MudImpl.cpp:327\n    #12 0x555556fd2630 in main ~/xania/src/main.cpp:23\n    #13 0x7ffff682a600 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:59\n    #14 0x7ffff682a717 in __libc_start_main_impl ../csu/libc-start.c:360\n    #15 0x555556fd1984 in _start (~/xania/install/bin/xania+0x1a7d984) (BuildId: dc389066e01e5035d647bf865b807777d961d23d)\n\npreviously allocated by thread T0 here:\n    #0 0x7ffff792c73f in operator new(unsigned long) ../../../../src/libsanitizer/asan/asan_new_delete.cpp:109\n    #1 0x5555577aef8f in std::__new_allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >::allocate(unsigned long, void const*) /usr/include/c++/15/bits/new_allocator.h:151\n    #2 0x5555577aadd3 in std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >::allocate(unsigned long) /usr/include/c++/15/bits/allocator.h:203\n    #3 0x5555577aadd3 in std::allocator_traits<std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> > >::allocate(std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> >&, unsigned long) /usr/include/c++/15/bits/alloc_traits.h:614\n    #4 0x5555577aadd3 in std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false>* std::__detail::_Hashtable_alloc<std::allocator<std::__detail::_Hash_node<std::pair<unsigned int const, Descriptor>, false> > >::_M_allocate_node<std::piecewise_construct_t const&, std::tuple<unsigned int&>, std::tuple<unsigned int&, Mud&> >(std::piecewise_construct_t const&, std::tuple<unsigned int&>&&, std::tuple<unsigned int&, Mud&>&&) /usr/include/c++/15/bits/hashtable_policy.h:1551\n    #5 0x5555577a8c7e in std::pair<std::__detail::_Node_iterator<std::pair<unsigned int const, Descriptor>, false, false>, bool> std::_Hashtable<unsigned int, std::pair<unsigned int const, Descriptor>, std::allocator<std::pair<unsigned int const, Descriptor> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_emplace_uniq<std::piecewise_construct_t const&, std::tuple<unsigned int&>, std::tuple<unsigned int&, Mud&> >(std::piecewise_construct_t const&, std::tuple<unsigned int&>&&, std::tuple<unsigned int&, Mud&>&&) /usr/include/c++/15/bits/hashtable.h:2346\n    #6 0x5555577a832a in std::pair<std::__detail::_Node_iterator<std::pair<unsigned int const, Descriptor>, false, false>, bool> std::_Hashtable<unsigned int, std::pair<unsigned int const, Descriptor>, std::allocator<std::pair<unsigned int const, Descriptor> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::emplace<std::piecewise_construct_t const&, std::tuple<unsigned int&>, std::tuple<unsigned int&, Mud&> >(std::piecewise_construct_t const&, std::tuple<unsigned int&>&&, std::tuple<unsigned int&, Mud&>&&) /usr/include/c++/15/bits/hashtable.h:1029\n    #7 0x5555577a7e86 in std::pair<std::__detail::_Node_iterator<std::pair<unsigned int const, Descriptor>, false, false>, bool> std::unordered_map<unsigned int, Descriptor, std::hash<unsigned int>, std::equal_to<unsigned int>, std::allocator<std::pair<unsigned int const, Descriptor> > >::emplace<std::piecewise_construct_t const&, std::tuple<unsigned int&>, std::tuple<unsigned int&, Mud&> >(std::piecewise_construct_t const&, std::tuple<unsigned int&>&&, std::tuple<unsigned int&, Mud&>&&) /usr/include/c++/15/bits/unordered_map.h:442\n    #8 0x5555577a748d in DescriptorList::create(unsigned int, Mud&) ~/xania/src/DescriptorList.cpp:18\n    #9 0x55555702800a in MudImpl::handle_doorman_packet(tagPacket const&, std::basic_string_view<char, std::char_traits<char> >) ~/xania/src/MudImpl.cpp:487\n    #10 0x555557020798 in MudImpl::game_loop() ~/xania/src/MudImpl.cpp:291\n    #11 0x555556fd2630 in main ~/xania/src/main.cpp:23\n    #12 0x7ffff682a600 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:59\n    #13 0x7ffff682a717 in __libc_start_main_impl ../csu/libc-start.c:360\n    #14 0x555556fd1984 in _start (~/xania/install/bin/xania+0x1a7d984) (BuildId: dc389066e01e5035d647bf865b807777d961d23d)\n\nSUMMARY: AddressSanitizer: heap-use-after-free ~/xania/src/Descriptor.hpp:162 in Descriptor::person() const",
+      "frames": [
+       {
+        "func": "Descriptor::person",
+        "file": "Descriptor.hpp",
+        "line": 162
+       },
+       {
+        "func": "Char::player",
+        "file": "Char.hpp",
+        "line": 220
+       },
+       {
+        "func": "get_skill_level",
+        "file": "skills.cpp",
+        "line": 569
+       },
+       {
+        "func": "Char::get_skill",
+        "file": "Char.cpp",
+        "line": 226
+       },
+       {
+        "func": "mana_gain",
+        "file": "update.cpp",
+        "line": 389
+       },
+       {
+        "func": "char_update",
+        "file": "update.cpp",
+        "line": 678
+       },
+       {
+        "func": "update_handler",
+        "file": "update.cpp",
+        "line": 882
+       },
+       {
+        "func": "MudImpl::game_loop",
+        "file": "MudImpl.cpp",
+        "line": 332
+       },
+       {
+        "func": "main",
+        "file": "main.cpp",
+        "line": 23
+       }
+      ],
+      "context": "Troll Den, level 10 (10)",
+      "transcripts": {
+       "Areah": "23:47:30 < You are: defenseless against magic.\n23:47:30 < \n23:47:30 < Strength: 14 (14)       Intelligence: 14 (14)   Wisdom: 14 (14)\n23:47:30 < Dexterity: 14 (14)      Constitution: 17 (17)\n23:47:30 < Practices: 14           Training sessions: 12\n23:47:30 < Alignment: neutral (0).\n23:47:30 < \n23:47:30 < <bot 11/154 109/109 56/154 10178 252 0>\n23:47:30 < \n23:47:42 > quit\n23:47:42 < \n23:47:42 < Areag appears in the room.\n23:47:42 < \n23:47:42 < <bot 11/154 109/109 56/154 10178 252 0>\n23:47:42 < \n23:47:42 < Areag leaves south.\n23:47:42 < \n23:47:42 < <bot 11/154 109/109 56/154 10178 252 0>\n23:47:42 < \n23:47:42 < Areag appears in the room.\n23:47:42 < \n23:47:42 < <bot 11/154 109/109 56/154 10178 252 0>\n23:47:42 < \n23:47:42 < Areae has left reality for the game.\n23:47:42 < ### Areae departs, seeking another reality.\n23:47:42 < \n23:47:42 < <bot 11/154 109/109 56/154 10178 252 0>\n23:47:42 < \n23:47:42 < Doorman has lost connection to Xania.\n23:47:42 < Attempting to reconnect to Xania.",
+       "Areag": "23:47:40 < Level: 10               Age: 17 years (0 hours)\n23:47:40 < Race: human             Class: knight\n23:47:40 < Sex: neutral            Position: standing\n23:47:40 < Items: 15 / 58          Weight: 49 / 205\n23:47:40 < Gold: 0\n23:47:40 < Wimpy: 0                Score: 10181 (819 to next level)\n23:47:40 < \n23:47:40 < Hit: 31 / 110           Mana: 127 / 127         Move: 3 / 154\n23:47:40 < You are: defenseless against piercing.\n23:47:40 < You are: defenseless against bashing.\n23:47:40 < You are: defenseless against slashing.\n23:47:40 < You are: defenseless against magic.\n23:47:40 < \n23:47:40 < Strength: 17 (17)       Intelligence: 14 (14)   Wisdom: 14 (14)\n23:47:40 < Dexterity: 14 (14)      Constitution: 14 (14)\n23:47:40 < Practices: 14           Training sessions: 12\n23:47:40 < Alignment: neutral (0).\n23:47:40 < \n23:47:40 < <bot 31/110 127/127 3/154 10181 0 0>\n23:47:40 < \n23:47:40 > quit\n23:47:40 < \n23:47:40 < Areae has left reality for the game.\n23:47:40 < ### Areae departs, seeking another reality.\n23:47:40 < \n23:47:40 < <bot 31/110 127/127 3/154 10181 0 0>\n23:47:40 < \n23:47:41 < \n23:47:41 < Doorman has lost connection to Xania.\n23:47:41 < Attempting to reconnect to Xania."
+      },
+      "title": "xania crashed (AddressSanitizer: heap-use-after-free) in Descriptor::person (Descriptor.hpp)"
+     }
+    }
+   ]
+  },
   {
    "signature": "crash:SIGABRT:MudImpl.cpp:MudImpl::nanny",
    "kind": "crash",
@@ -662,6 +741,30 @@
   }
  ],
  "runs": [
+  {
+   "id": "20261110-234744-area",
+   "kind": "area",
+   "title": "Area: TrollsDen.are",
+   "started": 1794372464.9238029,
+   "ended": 1794372464.928962,
+   "commit": "82171fa4434933217c5995dc45ae730c4c635928",
+   "dirty": 0,
+   "summary": {
+    "area": "Troll Den",
+    "file": "TrollsDen.are",
+    "rooms": 5,
+    "entry": 2801,
+    "advertised": "10-15",
+    "median_mob_level": 5,
+    "levels": "level 5 5, level 10 10, level 15 15",
+    "shops_in_area": 0,
+    "world": "full",
+    "findings": 1
+   },
+   "findings": [
+    "crash:asan-heap-use-after-free:Descriptor.hpp:Descriptor::person"
+   ]
+  },
   {
    "id": "20261110-232935-lobby",
    "kind": "lobby",
