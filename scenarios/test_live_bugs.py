@@ -131,3 +131,20 @@ async def test_autoloot_of_a_corpse_with_something_in_it_crashes_debug_builds(mu
         await mud.restart()
     assert crashed, "autoloot no longer crashes xania: the bug looks fixed, retire this test"
     assert "do_get" in report and "loot_and_sacrifice_corpse" in report
+
+
+async def test_cast_empty_quotes_crashes_debug_builds(mud, names, found):
+    """magic.cpp do_cast -> lookup.cpp skill_lookup: `cast ''` anywhere. Like practice '' (abraidotti/xania#7), but
+    any player can type it in any room: do_cast only checks that the line had arguments."""
+    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port)
+    await bot.enter(Profile())
+    crashed = await _crashes_after(mud, bot, "cast ''")
+    report = mud.crash_report() if crashed else ""
+    if not crashed:
+        await bot.close()
+    if crashed:
+        found.append(crash_finding(report, "python -m pytest scenarios/test_live_bugs.py -k cast_empty",
+                                   "A bot typed cast '' (a known-bug check)."))
+        await mud.restart()
+    assert crashed, "cast '' no longer crashes xania: the bug looks fixed, retire this test"
+    assert "skill_lookup" in report and "do_cast" in report
