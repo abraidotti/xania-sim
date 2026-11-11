@@ -20,11 +20,17 @@
 
   <p align="center">
     Bots that test Xania by playing it, the way players do.
+  </p>
+
+  <h2 align="center">
+    <a href="https://abraidotti.github.io/xania-sim/">abraidotti.github.io/xania-sim »</a>
+  </h2>
+
+  <p align="center">
+    The dispatch: what the bots have found, each finding on its own page, the run log and the bots' progress.
     <br />
-    <a href="docs/trials.md"><strong>See the trials »</strong></a>
     <br />
-    <br />
-    <a href="https://abraidotti.github.io/xania-sim/">The dispatch</a>
+    <a href="docs/trials.md">The trials</a>
     &middot;
     <a href="docs/how-it-works.md">How it works</a>
     &middot;
