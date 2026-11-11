@@ -53,6 +53,10 @@ def main() -> None:
                     help="preflight: one class at the first level for 1.5 minutes, to check it all works first")
     ar.add_argument("--fail-fast", action="store_true", help="stop after a level where no bot won a fight")
     ar.add_argument("--port", type=int, default=9160)
+    lb = sub.add_parser("lobby", help="a careless player: press Enter at each login prompt and see if xania survives")
+    lb.add_argument("--prompts", nargs="*", choices=["confirm_new", "sex", "alignment", "customize", "break_connect"],
+                    help="only these prompts (default: all five)")
+    lb.add_argument("--port", type=int, default=9170)
     sub.add_parser("report", help="print the latest runs and findings")
     st = sub.add_parser("status", help="each bot's progress: level, xp, kills, deaths, time played")
     st.add_argument("bot", nargs="?", help="show this bot's recent events and areas too")

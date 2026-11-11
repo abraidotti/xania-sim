@@ -139,4 +139,13 @@ def area(args) -> TrialResult:
                not args.no_record)
 
 
-TRIALS = {"smoke": smoke, "hunt": hunt, "churn": churn, "stage": stage, "level": level, "skill": skill, "area": area}
+def lobby(args) -> TrialResult:
+    from xania_sim.trials.lobby import run_lobby
+
+    def body(result):
+        return asyncio.run(run_lobby(result, args.port, args.prompts))
+
+    return run("lobby", "Lobby: an empty reply at each login prompt", body, not args.no_record)
+
+
+TRIALS = {"smoke": smoke, "hunt": hunt, "churn": churn, "stage": stage, "level": level, "skill": skill, "area": area, "lobby": lobby}
