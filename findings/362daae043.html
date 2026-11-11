@@ -37,9 +37,6 @@ footer { margin-top: 48px; color: var(--muted); font-size: 0.85rem; }
 .chart .hit { fill: transparent; }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .journal p { margin: 4px 0; }
-.narrator { font-weight: 600; margin: 18px 0 4px; }
-.chron { font-style: italic; color: var(--muted); }
-.epithet { color: var(--accent); font-weight: 600; }
 </style></head><body><main><p class='sub'><a href='../index.html'>Xania Sim dispatch</a></p><h1>xania crashed (unknown signal) in unknown code</h1><div class="card"><h3><a href="../findings/362daae043.html">xania crashed (unknown signal) in unknown code</a></h3><div class="meta"><span class="badge high">high</span><span class="badge status-ignored">ignored</span>seen 1×, first 2026-11-09 13:07, last 2026-11-09 13:07 on <code>82171fa443</code></div><p>Call chain:</p></div><h2>What happened</h2><pre>Call chain:</pre><h2>Reproduce</h2><pre>python -m pytest &quot;scenarios/test_live_smoke.py::test_character_is_saved_and_logs_back_in&quot;</pre><h2>Occurrences (1)</h2><div class='card'><div class='meta'>2026-11-09 13:07 · run 20261109-130746-tests · <code>82171fa443</code></div><p>During the live scenario test_character_is_saved_and_logs_back_in.</p><details><summary>Backtrace and xania's last log lines</summary><pre>  Poisoned by user:        f7
   Container overflow:      fc
   Array cookie:            ac

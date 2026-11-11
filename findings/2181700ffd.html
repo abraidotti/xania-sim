@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>xania crashed (SIGABRT, failed assertion) in MudImpl::nanny (MudImpl.cpp)</title><style>
+:root { --bg: #fbfaf7; --fg: #1d1d1b; --muted: #6b6a66; --card: #ffffff; --line: #e4e1da; --accent: #8a3b12;
+        --high: #b42318; --medium: #b54708; --low: #475467; --code: #f3f1ec; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161513; --fg: #ecebe7; --muted: #a3a19b; --card: #1f1e1b; --line: #34322d; --accent: #f0a46b;
+          --high: #f97066; --medium: #fdb022; --low: #98a2b3; --code: #26241f; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+a { color: var(--accent); }
+h1 { font-size: 1.9rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; margin: 36px 0 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.sub { color: var(--muted); margin: 0 0 8px; }
+.headlines li { margin: 4px 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin: 12px 0; }
+.card h3 { margin: 0 0 6px; font-size: 1.05rem; }
+.meta { color: var(--muted); font-size: 0.88rem; }
+.badge { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 1px 8px; border-radius: 999px;
+         border: 1px solid currentColor; margin-right: 6px; text-transform: uppercase; letter-spacing: 0.04em; }
+.high { color: var(--high); } .medium { color: var(--medium); } .low { color: var(--low); }
+.status-new { color: var(--accent); }
+pre { background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+      overflow-x: auto; font-size: 0.8rem; line-height: 1.45; }
+code { background: var(--code); padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+.scroll { overflow-x: auto; }
+details { margin: 8px 0; } summary { cursor: pointer; color: var(--muted); }
+footer { margin-top: 48px; color: var(--muted); font-size: 0.85rem; }
+.chart { width: 100%; height: auto; display: block; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .axis { fill: var(--muted); font-size: 11px; }
+.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.chart .dot { fill: var(--accent); stroke: var(--card); stroke-width: 2; }
+.chart .hit { fill: transparent; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.journal p { margin: 4px 0; }
+</style></head><body><main><p class='sub'><a href='../index.html'>Xania Sim dispatch</a></p><h1>xania crashed (SIGABRT, failed assertion) in MudImpl::nanny (MudImpl.cpp)</h1><div class="card"><h3><a href="../findings/2181700ffd.html">xania crashed (SIGABRT, failed assertion) in MudImpl::nanny (MudImpl.cpp)</a></h3><div class="meta"><span class="badge high">high</span><span class="badge status-known">known</span>seen 5×, first 2026-11-10 23:29, last 2026-11-10 23:29 on <code>82171fa443</code> · <a href="https://github.com/abraidotti/xania/issues/3">issue</a></div><p>/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.</p></div><h2>What happened</h2><pre>/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.
+
+Call chain: MudImpl::nanny (MudImpl.cpp:740) &lt;- MudImpl::game_loop (MudImpl.cpp:320) &lt;- main (main.cpp:23) &lt;- MudImpl::nanny (MudImpl.cpp:740)</pre><h2>Reproduce</h2><pre>python -m xania_sim lobby --prompts confirm_new</pre><h2>Occurrences (5)</h2><div class='card'><div class='meta'>2026-11-10 23:29 · run 20261110-232935-lobby · <code>82171fa443</code></div><p>an empty reply at the BreakConnect prompt (MudImpl.cpp:711)</p><p><code>MudImpl::nanny</code> MudImpl.cpp:711 ← <code>MudImpl::game_loop</code> MudImpl.cpp:320 ← <code>main</code> main.cpp:23 ← <code>MudImpl::nanny</code> MudImpl.cpp:711</p><details><summary>Backtrace and xania's last log lines</summary><pre>2026-11-11 04:29:13Z :: TICK
+2026-11-11 04:29:13Z :: Incoming connection on channel 0.
+2026-11-11 04:29:13Z :: Closing link to channel 0.
+2026-11-11 04:29:13Z :: Incoming connection on channel 1.
+2026-11-11 04:29:15Z :: Lobbye@localh*** [#249896952128253326] new player.
+2026-11-11 04:29:17Z :: Incoming connection on channel 0.
+/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.
+
+Program received signal SIGABRT, Aborted.
+__pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+warning: 44	./nptl/pthread_kill.c: No such file or directory
+
+=== xania-sim: backtrace ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4e42cd0, __pos=0) at /usr/include/c++/15/string_view:260
+#7  0x0000555557031858 in MudImpl::nanny (this=0x7d7ff5be0080, d=0x7d2ff5d2b510, argument=&quot;&quot;) at ~/xania/src/MudImpl.cpp:711
+#8  0x000055555702153f in MudImpl::game_loop (this=0x7d7ff5be0080) at ~/xania/src/MudImpl.cpp:320
+#9  0x0000555556fd2631 in main () at ~/xania/src/main.cpp:23
+
+=== locals ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+        tid = &lt;optimized out&gt;
+        ret = 0
+        pd = &lt;optimized out&gt;
+        old_mask = {__val = {17042406933504}}
+        ret = &lt;optimized out&gt;
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+No locals.
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+No locals.
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+        ret = &lt;optimized out&gt;
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+        act = {__sigaction_handler = {sa_handler = 0x104, sa_sigaction = 0x104}, sa_mask = {__val = {93825031387840, 136339255472800, 140737488338128, 140737488338160, 140737347006847, 137851100608312, 136339254084656, 140737488338288, 140737347231613, 140737353248768, 0, 32768, 140737347055821, 140737488338240, 140737347038132, 17042406760448}}, sa_flags = 4096, sa_restorer = 0x7bfff4e432a0}
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+No symbol table info available.
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4e42cd0, __pos=0) at /usr/include/c++/15/string_view:260
+        __PRETTY_FUNCTION__ = &quot;constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_r&quot;...
+#7  0x0000555557031858 in MudImpl::nanny (this=0x7d7ff5be0080, d=0x7d2ff5d2b510, argument=&quot;&quot;) at ~/xania/src/MudImpl.cpp:711
+        ch = 0x7d5ff5e23680</pre></details></div><div class='card'><div class='meta'>2026-11-10 23:29 · run 20261110-232935-lobby · <code>82171fa443</code></div><p>an empty reply at the DefaultChoice prompt (MudImpl.cpp:915)</p><p><code>MudImpl::nanny</code> MudImpl.cpp:915 ← <code>MudImpl::game_loop</code> MudImpl.cpp:320 ← <code>main</code> main.cpp:23 ← <code>MudImpl::nanny</code> MudImpl.cpp:915</p><details><summary>Backtrace and xania's last log lines</summary><pre>2026-11-11 04:28:54Z :: Xania is ready to rock via /tmp/.xania-9170-alessandro.
+2026-11-11 04:28:54Z :: TICK
+2026-11-11 04:28:54Z :: Incoming connection on channel 0.
+2026-11-11 04:28:54Z :: Closing link to channel 0.
+2026-11-11 04:28:54Z :: Incoming connection on channel 1.
+2026-11-11 04:28:56Z :: Lobbyd@localh*** [#249896952128253326] new player.
+/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.
+
+Program received signal SIGABRT, Aborted.
+__pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+warning: 44	./nptl/pthread_kill.c: No such file or directory
+
+=== xania-sim: backtrace ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4e14cd0, __pos=0) at /usr/include/c++/15/string_view:260
+#7  0x0000555557037ae8 in MudImpl::nanny (this=0x7d7ff5be0080, d=0x7d2ff5d2b510, argument=&quot;&quot;) at ~/xania/src/MudImpl.cpp:915
+#8  0x000055555702153f in MudImpl::game_loop (this=0x7d7ff5be0080) at ~/xania/src/MudImpl.cpp:320
+#9  0x0000555556fd2631 in main () at ~/xania/src/main.cpp:23
+
+=== locals ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+        tid = &lt;optimized out&gt;
+        ret = 0
+        pd = &lt;optimized out&gt;
+        old_mask = {__val = {17042406909952}}
+        ret = &lt;optimized out&gt;
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+No locals.
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+No locals.
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+        ret = &lt;optimized out&gt;
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+        act = {__sigaction_handler = {sa_handler = 0x104, sa_sigaction = 0x104}, sa_mask = {__val = {93825031387840, 136339255284384, 140737488338128, 140737488338160, 140737347006847, 140737488338112, 137644941161744, 139642271677680, 140737347231613, 140737353248768, 0, 32768, 140737347055821, 140737488338240, 140737347038132, 17042406760448}}, sa_flags = 4096, sa_restorer = 0x7bfff4e152a0}
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+No symbol table info available.
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4e14cd0, __pos=0) at /usr/include/c++/15/string_view:260
+        __PRETTY_FUNCTION__ = &quot;constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_r&quot;...
+#7  0x0000555557037ae8 in MudImpl::nanny (this=0x7d7ff5be0080, d=0x7d2ff5d2b510, argument=&quot;&quot;) at ~/xania/src/MudImpl.cpp:915
+        ch = 0x7d5ff5e23380</pre></details></div><div class='card'><div class='meta'>2026-11-10 23:29 · run 20261110-232935-lobby · <code>82171fa443</code></div><p>an empty reply at the GetAlignment prompt (MudImpl.cpp:890)</p><p><code>MudImpl::nanny</code> MudImpl.cpp:890 ← <code>MudImpl::game_loop</code> MudImpl.cpp:320 ← <code>main</code> main.cpp:23 ← <code>MudImpl::nanny</code> MudImpl.cpp:890</p><details><summary>Backtrace and xania's last log lines</summary><pre>2026-11-11 04:28:35Z :: Xania is ready to rock via /tmp/.xania-9170-alessandro.
+2026-11-11 04:28:35Z :: TICK
+2026-11-11 04:28:35Z :: Incoming connection on channel 0.
+2026-11-11 04:28:35Z :: Closing link to channel 0.
+2026-11-11 04:28:35Z :: Incoming connection on channel 1.
+2026-11-11 04:28:37Z :: Lobbyc@localh*** [#249896952128253326] new player.
+/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.
+
+Program received signal SIGABRT, Aborted.
+__pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+warning: 44	./nptl/pthread_kill.c: No such file or directory
+
+=== xania-sim: backtrace ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4e10cd0, __pos=0) at /usr/include/c++/15/string_view:260
+#7  0x0000555557036e99 in MudImpl::nanny (this=0x7d7ff5be0080, d=0x7d2ff5d2bf90, argument=&quot;&quot;) at ~/xania/src/MudImpl.cpp:890
+#8  0x000055555702153f in MudImpl::game_loop (this=0x7d7ff5be0080) at ~/xania/src/MudImpl.cpp:320
+#9  0x0000555556fd2631 in main () at ~/xania/src/main.cpp:23
+
+=== locals ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+        tid = &lt;optimized out&gt;
+        ret = 0
+        pd = &lt;optimized out&gt;
+        old_mask = {__val = {17042406907904}}
+        ret = &lt;optimized out&gt;
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+No locals.
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+No locals.
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+        ret = &lt;optimized out&gt;
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+        act = {__sigaction_handler = {sa_handler = 0x104, sa_sigaction = 0x104}, sa_mask = {__val = {93825031387840, 136339255268000, 140737488338128, 140737488338160, 140737347006847, 140737488338128, 136339254084656, 140737488338160, 140737347231613, 140737353248768, 0, 32768, 140737347055821, 140737488338240, 140737347038132, 17042406760448}}, sa_flags = 4096, sa_restorer = 0x7bfff4e112a0}
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+No symbol table info available.
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4e10cd0, __pos=0) at /usr/include/c++/15/string_view:260
+        __PRETTY_FUNCTION__ = &quot;constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_r&quot;...
+#7  0x0000555557036e99 in MudImpl::nanny (this=0x7d7ff5be0080, d=0x7d2ff5d2bf90, argument=&quot;&quot;) at ~/xania/src/MudImpl.cpp:890
+        ch = 0x7d5ff5e23380</pre></details></div><div class='card'><div class='meta'>2026-11-10 23:29 · run 20261110-232935-lobby · <code>82171fa443</code></div><p>an empty reply at the GetNewSex prompt (MudImpl.cpp:854)</p><p><code>MudImpl::nanny</code> MudImpl.cpp:854 ← <code>MudImpl::game_loop</code> MudImpl.cpp:320 ← <code>main</code> main.cpp:23 ← <code>MudImpl::nanny</code> MudImpl.cpp:854</p><details><summary>Backtrace and xania's last log lines</summary><pre>2026-11-11 04:28:16Z :: Running under a debugger
+2026-11-11 04:28:16Z :: Xania is ready to rock via /tmp/.xania-9170-alessandro.
+2026-11-11 04:28:16Z :: TICK
+2026-11-11 04:28:17Z :: Incoming connection on channel 0.
+2026-11-11 04:28:17Z :: Closing link to channel 0.
+2026-11-11 04:28:17Z :: Incoming connection on channel 1.
+/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.
+
+Program received signal SIGABRT, Aborted.
+__pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+warning: 44	./nptl/pthread_kill.c: No such file or directory
+
+=== xania-sim: backtrace ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4e08cd0, __pos=0) at /usr/include/c++/15/string_view:260
+#7  0x0000555557035c4f in MudImpl::nanny (this=0x7d7ff5be0080, d=0x7d2ff5d2b190, argument=&quot;&quot;) at ~/xania/src/MudImpl.cpp:854
+#8  0x000055555702153f in MudImpl::game_loop (this=0x7d7ff5be0080) at ~/xania/src/MudImpl.cpp:320
+#9  0x0000555556fd2631 in main () at ~/xania/src/main.cpp:23
+
+=== locals ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+        tid = &lt;optimized out&gt;
+        ret = 0
+        pd = &lt;optimized out&gt;
+        old_mask = {__val = {17042406903808}}
+        ret = &lt;optimized out&gt;
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+No locals.
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+No locals.
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+        ret = &lt;optimized out&gt;
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+        act = {__sigaction_handler = {sa_handler = 0x104, sa_sigaction = 0x104}, sa_mask = {__val = {93825031387840, 136339255235232, 140737488338128, 140737488338160, 140737347006847, 140737488338128, 136339254084656, 140737488338160, 140737347231613, 140737353248768, 0, 32768, 140737347055821, 140737488338240, 140737347038132, 17042406760448}}, sa_flags = 4096, sa_restorer = 0x7bfff4e092a0}
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+No symbol table info available.
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4e08cd0, __pos=0) at /usr/include/c++/15/string_view:260
+        __PRETTY_FUNCTION__ = &quot;constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_r&quot;...
+#7  0x0000555557035c4f in MudImpl::nanny (this=0x7d7ff5be0080, d=0x7d2ff5d2b190, argument=&quot;&quot;) at ~/xania/src/MudImpl.cpp:854
+        sex = std::optional [no contained value]
+        ch = 0x7d5ff5e23380</pre></details></div><div class='card'><div class='meta'>2026-11-10 23:29 · run 20261110-232935-lobby · <code>82171fa443</code></div><p>an empty reply at the ConfirmNewName prompt (MudImpl.cpp:740)</p><p><code>MudImpl::nanny</code> MudImpl.cpp:740 ← <code>MudImpl::game_loop</code> MudImpl.cpp:320 ← <code>main</code> main.cpp:23 ← <code>MudImpl::nanny</code> MudImpl.cpp:740</p><details><summary>Backtrace and xania's last log lines</summary><pre>2026-11-11 04:27:59Z :: Running under a debugger
+2026-11-11 04:27:59Z :: Xania is ready to rock via /tmp/.xania-9170-alessandro.
+2026-11-11 04:27:59Z :: TICK
+2026-11-11 04:27:59Z :: Incoming connection on channel 0.
+2026-11-11 04:27:59Z :: Closing link to channel 0.
+2026-11-11 04:27:59Z :: Incoming connection on channel 1.
+/usr/include/c++/15/string_view:260: constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_reference = const char&amp;; size_type = long unsigned int]: Assertion &#x27;__pos &lt; this-&gt;_M_len&#x27; failed.
+
+Program received signal SIGABRT, Aborted.
+__pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+warning: 44	./nptl/pthread_kill.c: No such file or directory
+
+=== xania-sim: backtrace ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4e04cd0, __pos=0) at /usr/include/c++/15/string_view:260
+#7  0x00005555570322c1 in MudImpl::nanny (this=0x7d7ff5be0080, d=0x7d2ff5d2cd90, argument=&quot;&quot;) at ~/xania/src/MudImpl.cpp:740
+#8  0x000055555702153f in MudImpl::game_loop (this=0x7d7ff5be0080) at ~/xania/src/MudImpl.cpp:320
+#9  0x0000555556fd2631 in main () at ~/xania/src/main.cpp:23
+
+=== locals ===
+#0  __pthread_kill_implementation (threadid=&lt;optimized out&gt;, signo=6, no_tid=0) at ./nptl/pthread_kill.c:44
+        tid = &lt;optimized out&gt;
+        ret = 0
+        pd = &lt;optimized out&gt;
+        old_mask = {__val = {17042406901760}}
+        ret = &lt;optimized out&gt;
+#1  __pthread_kill_internal (threadid=&lt;optimized out&gt;, signo=6) at ./nptl/pthread_kill.c:89
+No locals.
+#2  __GI___pthread_kill (threadid=&lt;optimized out&gt;, signo=signo@entry=6) at ./nptl/pthread_kill.c:100
+No locals.
+#3  0x00007ffff6845b7e in __GI_raise (sig=sig@entry=6) at ../sysdeps/posix/raise.c:26
+        ret = &lt;optimized out&gt;
+#4  0x00007ffff68288ec in __GI_abort () at ./stdlib/abort.c:77
+        act = {__sigaction_handler = {sa_handler = 0x104, sa_sigaction = 0x104}, sa_mask = {__val = {93825031387840, 136339255218848, 140737488338128, 140737488338160, 140737347006847, 140737488338208, 136339254084656, 136339255209504, 140737347231613, 140737353248768, 0, 32768, 140737347055821, 140737488338240, 140737347038132, 17042406760448}}, sa_flags = 4096, sa_restorer = 0x7bfff4e052a0}
+#5  0x00007ffff74ae716 in std::__glibcxx_assert_fail(char const*, int, char const*, char const*) () from /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+No symbol table info available.
+#6  0x00005555570563fd in std::basic_string_view&lt;char, std::char_traits&lt;char&gt; &gt;::operator[] (this=0x7bfff4e04cd0, __pos=0) at /usr/include/c++/15/string_view:260
+        __PRETTY_FUNCTION__ = &quot;constexpr const std::basic_string_view&lt;_CharT, _Traits&gt;::value_type&amp; std::basic_string_view&lt;_CharT, _Traits&gt;::operator[](size_type) const [with _CharT = char; _Traits = std::char_traits&lt;char&gt;; const_r&quot;...
+#7  0x00005555570322c1 in MudImpl::nanny (this=0x7d7ff5be0080, d=0x7d2ff5d2cd90, argument=&quot;&quot;) at ~/xania/src/MudImpl.cpp:740
+        ch = 0x7d5ff5e23380</pre></details></div><footer>Made by <a href="https://github.com/abraidotti/xania-sim">xania-sim</a>: bots playing <a href="https://github.com/mattgodbolt/xania">Xania</a>. <a href="../index.html">Dispatch home</a>.</footer></main></body></html>
