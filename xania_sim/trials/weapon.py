@@ -202,4 +202,7 @@ async def run_weapon(result, cases: list[tuple[int, int]] | None = None, rounds:
                 result.measurements[f"{vnum}@{level}"] = s
         finally:
             await d.close()
+    errors = [o.summary for o in result.outcomes if o.activity == "weapon" and o.data.get("error")]
+    if errors and len(errors) == len(cases or DEFAULT_CASES):
+        raise RuntimeError(f"no case ran: {errors[0]}")  # "couldn't run" (exit 2), not a clean result
     return []
