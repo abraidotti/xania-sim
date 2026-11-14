@@ -10,9 +10,11 @@ from xania_sim.core.session import Bot, Profile
 
 pytestmark = pytest.mark.live
 
+OWN_PORT = 9102  # its own fresh MUD: not the session's 9100, which may already be up
+
 
 async def test_director_sets_the_stage():
-    async with TestMud(port=9100) as mud:
+    async with TestMud(port=OWN_PORT) as mud:
         d = await Director.create(mud)
         try:
             bot = Bot("Stagehand", "stagepass1", host=mud.host, port=mud.port)

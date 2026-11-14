@@ -14,6 +14,9 @@ from pathlib import Path
 
 IAC, DONT, DO, WONT, WILL, SB, SE = 255, 254, 253, 252, 251, 250, 240
 ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]")
+CLOSE_TIMEOUT = 5.0  # seconds to wait for a connection to finish closing (a dead peer may never confirm it)
+
+last_io = time.monotonic()  # when any connection last sent or received something (record.watchdog reads it)
 
 
 class Timeout(Exception):
@@ -86,6 +89,8 @@ class Connection:
         return cls(reader, writer, transcript)
 
     def _note(self, direction: str, text: str) -> None:
+        global last_io
+        last_io = time.monotonic()
         if self._log:
             stamp = time.strftime("%H:%M:%S")
             for line in text.split("\n"):
@@ -146,8 +151,8 @@ class Connection:
         self.closed = True
         self._writer.close()
         try:
-            await self._writer.wait_closed()
-        except (ConnectionError, OSError):
+            await asyncio.wait_for(self._writer.wait_closed(), CLOSE_TIMEOUT)
+        except (ConnectionError, OSError, asyncio.TimeoutError):
             pass
         if self._log:
             self._log.close()

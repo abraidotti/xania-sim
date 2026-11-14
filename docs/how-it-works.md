@@ -6,6 +6,22 @@ Each run starts its own doorman and xania on their own port, from your build, wi
 is installed, xania runs under it: gdb only watches, but when xania dies the report has the signal, xania's last
 log lines and a backtrace. Builds with AddressSanitizer report their own stacks.
 
+A run that dies before it can stop its server (killed, or ended by the watchdog) leaves that server behind: on
+Windows its `wsl.exe`, start script, doorman and xania all outlive the Python process. Left alone, it holds the
+port, and the next run's doorman can't bind it. Each MUD's processes record the Python process they belong to
+(`XANIA_SIM_OWNER`), and the next run on the same port stops any whose owner has gone. A MUD another run is still
+using is never touched, and a port held by anything else is still refused. If the doorman can't bind its port
+anyway, the run stops with that error, rather than carrying on behind someone else's doorman.
+
+## The watchdog
+
+A trial's time limits run on its event loop, so they can't fire if the loop itself stops. A thread outside the
+loop watches it during command-line trials (area, lobby, skill, weapon). If the loop doesn't run for 2 minutes,
+every thread's stack goes to `stall.txt` in the run folder; if it's still stuck at 10 minutes, the trial exits
+with code 2 (couldn't run). When the loop runs but no MUD traffic has passed for 5 minutes, the asyncio tasks'
+stacks go there too, as a record only. `XANIA_SIM_STALL_EXIT` sets the exit time in seconds (`0`: never), and
+`XANIA_SIM_WATCHDOG=0` turns the watchdog off.
+
 ## Setting the stage
 
 An immortal "director" bot sets up what a test needs, so it can start where a real player would be. It advances a

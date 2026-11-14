@@ -48,6 +48,7 @@ test -x "$X/install/bin/xania" || {{ echo "NO_BUILD $X/install/bin/xania"; exit 
 test -f "$D/log/xania.log" && mv "$D/log/xania.log" "$D/log/xania-$(date +%s).log"
 AREA="$X/area/"
 {area_list}export MUD_PORT={port} MUD_AREA_DIR="$AREA" MUD_HTML_DIR="$X/html/" MUD_DATA_DIR="$D/"
+export XANIA_SIM_OWNER={owner}  # the Python process this MUD belongs to: once it's gone, the MUD is a leftover
 cd "$X"
 "$X/install/bin/doorman" > "$D/log/doorman.log" 2>&1 & echo $! > "$D/doorman.pid"
 sleep 0.5
@@ -63,6 +64,68 @@ fi
 echo STARTED
 wait
 """
+
+
+DOORMAN_BIND_FAILED = "Unable to bind to address"
+
+# This user's test-MUD processes on a port (MUD_PORT matches): "pid name ppid parent owner" per line, where parent is
+# "script" (the `bash -s` start script), "gdb" (xania under gdb) or "other" (orphaned), and owner is the
+# XANIA_SIM_OWNER the start script exported ("-" if none: a MUD started before owners were recorded).
+_LEFTOVERS = r"""
+for pid in $(pgrep -u "$(id -u)" -x 'doorman|xania|gdb'); do
+    env=$(tr '\0' '\n' < /proc/$pid/environ 2>/dev/null) || continue
+    printf '%s\n' "$env" | grep -qx 'MUD_PORT={port}' || continue
+    owner=$(printf '%s\n' "$env" | sed -n 's/^XANIA_SIM_OWNER=//p'); owner=${{owner:--}}
+    ppid=$(ps -o ppid= -p $pid | tr -d ' ')
+    case "$(tr '\0' ' ' < /proc/$ppid/cmdline 2>/dev/null)" in
+        "bash -s "*) parent=script ;;
+        *) if [ "$(cat /proc/$ppid/comm 2>/dev/null)" = gdb ]; then parent=gdb; else parent=other; fi ;;
+    esac
+    echo "$pid $(cat /proc/$pid/comm) $ppid $parent $owner"
+done
+true
+"""
+
+
+def owner_alive(pid: int) -> bool:
+    """Is process ``pid`` (where this Python runs) still running? True when unsure, so a doubt never stops a MUD."""
+    if ON_WINDOWS:
+        import ctypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            return ctypes.get_last_error() != 87  # ERROR_INVALID_PARAMETER: no such process
+        try:
+            code = ctypes.c_ulong()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return True
+            return code.value == 259  # STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def leftovers(rows: list[tuple[str, ...]], alive=owner_alive) -> list[tuple[str, str]]:
+    """From ``_LEFTOVERS`` rows, the (pid, name) to stop: processes cut off from their start script, and those whose
+    owning Python has gone (with their start script, so it ends too). xania under gdb goes with its gdb."""
+    out: list[tuple[str, str]] = []
+    for pid, name, ppid, parent, owner in rows:
+        if parent == "gdb":
+            continue
+        if parent == "other":
+            out.append((pid, name))
+        elif parent == "script" and owner.isdigit() and not alive(int(owner)):
+            out.append((pid, name))
+            if (ppid, "bash") not in out:
+                out.append((ppid, "bash"))
+    return out
 
 
 def _bash() -> list[str]:
@@ -110,6 +173,7 @@ class TestMud:
         self.port, self.host = port, host
         self.area_list = area_list
         self.data_dir = f"/tmp/xania-sim/{port}"  # Linux path
+        self.owner = os.getpid()  # recorded with the MUD's processes (XANIA_SIM_OWNER), for _leftover_pids
         self._proc: subprocess.Popen | None = None
 
     def run(self, script: str, check: bool = True) -> str:
@@ -117,9 +181,10 @@ class TestMud:
 
     async def start(self, timeout: float = 60, fresh: bool = True) -> None:
         """Start the MUD. ``fresh`` empties the data dir first (no players); a restart keeps it."""
+        await self._reap_leftovers()
         if await self._answers():
             raise RuntimeError(f"something is already listening on port {self.port}")
-        script = _START.format(xania=XANIA, data=shlex.quote(self.data_dir), port=self.port,
+        script = _START.format(xania=XANIA, data=shlex.quote(self.data_dir), port=self.port, owner=int(self.owner),
                                wipe='rm -rf "$D"\n' if fresh else "", gdb=GDB, marker=BACKTRACE_MARKER,
                                area_list=area_list_script(self.area_list))
         self._proc = subprocess.Popen(_bash(), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -131,11 +196,43 @@ class TestMud:
             if self._proc.poll() is not None:
                 out = self._proc.stdout.read().decode("utf-8", "replace") if self._proc.stdout else ""
                 raise RuntimeError(f"the test MUD failed to start:\n{out}\n{self.log('xania')[-2000:]}")
+            if DOORMAN_BIND_FAILED in self.log("doorman"):
+                # it would carry on behind whatever holds the port, and the run would talk to that instead
+                await self.stop()
+                raise RuntimeError(f"the test MUD's doorman couldn't bind port {self.port}: something else holds "
+                                   f"it (in WSL: ss -ltnp 'sport = :{self.port}')")
             if await self._answers():
                 return
             await asyncio.sleep(0.5)
         await self.stop()
         raise RuntimeError(f"the test MUD didn't answer on port {self.port} within {timeout:g}s")
+
+    def _leftover_pids(self) -> list[tuple[str, str]]:
+        """(pid, name) of what an earlier test MUD on this port left behind: its doorman, xania and gdb (``MUD_PORT``
+        = this port) when the Python process that started it has gone, or they've lost their start script. That's a
+        run that was killed, or ended by the watchdog, before it could stop its server: on Windows its wsl.exe, start
+        script and server outlive it. A MUD whose Python is still running (another run using it) is never touched.
+        The data dir's pid files can't be trusted for this: a fresh start wipes them."""
+        out = self.run(_LEFTOVERS.format(port=self.port), check=False)
+        return leftovers([tuple(ln.split()) for ln in out.splitlines() if len(ln.split()) == 5])
+
+    async def _reap_leftovers(self, timeout: float = 10) -> list[tuple[str, str]]:
+        """Stop what an earlier run left on this port (``_leftover_pids``); return what was stopped."""
+        left = self._leftover_pids()
+        if not left:
+            return []
+        print(f"[test MUD] stopping what an earlier run left on port {self.port}: "
+              f"{', '.join(f'{n} {p}' for p, n in left)}", file=sys.stderr, flush=True)
+        pids = " ".join(p for p, _ in left)
+        # gdb's child (xania) first, then the rest; whatever ignores SIGTERM gets SIGKILL
+        self.run(f"for p in {pids}; do pkill -TERM -P $p 2>/dev/null; kill -TERM $p 2>/dev/null; done; "
+                 f"for i in $(seq 20); do alive=; for p in {pids}; do kill -0 $p 2>/dev/null && alive=1; done; "
+                 f"test -z \"$alive\" && break; sleep 0.25; done; "
+                 f"for p in {pids}; do kill -KILL $p 2>/dev/null; done; true", check=False)
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline and await self._answers():
+            await asyncio.sleep(0.5)
+        return left
 
     async def _answers(self) -> bool:
         """True once xania is up behind doorman (the lobby's name prompt arrives)."""

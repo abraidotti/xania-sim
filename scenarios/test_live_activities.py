@@ -18,6 +18,9 @@ from xania_sim.record.rooms import Fingerprints
 pytestmark = pytest.mark.live
 MOB, SWORD, JACKET = 3064, 3021, 9523  # the drunk (level 2, doesn't flee); a short sword; a leather jacket (level 20)
 
+OWN_PORT = 9102  # its own fresh MUD: not the session's 9100, which may already be up
+
+
 
 def _mob_room(w) -> int:
     info = next(i for i in M.collect(w) if i.mob.vnum == MOB)
@@ -28,7 +31,7 @@ async def test_everyday_activities():
     w = W.load()
     objects = Objects(w)
     names = iter(bot_names("acts", 50, mob_words(w)))
-    async with TestMud(port=9100) as mud:
+    async with TestMud(port=OWN_PORT) as mud:
         d = await Director.create(mud)
         try:
             bot = Bot(next(names), "actspass1", host=mud.host, port=mud.port)

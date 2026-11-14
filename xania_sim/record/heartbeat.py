@@ -11,6 +11,8 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 
+from xania_sim.record import watchdog
+
 
 class Heartbeat:
     def __init__(self, folder: Path, trial: str, quiet: bool = False):
@@ -19,6 +21,7 @@ class Heartbeat:
         self.path = self.folder / "progress.jsonl"
         self.trial, self.quiet = trial, quiet
         self.t0 = time.monotonic()
+        watchdog.adopt(self.folder, trial)  # a command-line trial: watch this run's loop, write stalls here
 
     def __call__(self, who: str, what: str, **data) -> None:
         t = round(time.monotonic() - self.t0)

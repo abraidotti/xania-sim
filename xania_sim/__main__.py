@@ -99,10 +99,16 @@ def main() -> None:
 
 def trial_cmd(trial, args) -> int:
     """Run a trial; print its result (text, or JSON with everything else on stderr); return its exit code."""
+    from xania_sim.record import watchdog
+
     out = sys.stderr if args.json else sys.stdout
-    with contextlib.redirect_stdout(out):
-        result = trial(args)
-        print(result.text())
+    watchdog.arm()  # a trial whose event loop stops running gets a stack dump and an end (record/watchdog.py)
+    try:
+        with contextlib.redirect_stdout(out):
+            result = trial(args)
+            print(result.text())
+    finally:
+        watchdog.disarm()
     if args.json:
         print(result.to_json())
     return result.exit_code()

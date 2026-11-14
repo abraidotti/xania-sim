@@ -63,5 +63,7 @@ Each run has a folder in `runs/` with:
 
 * a transcript per bot, everything sent (`>`) and received (`<`);
 * `progress.jsonl`, a line per step as the trial went;
+* `stall.txt`, only if the watchdog saw the trial stop moving: where every thread or task was waiting (see
+  [How it works](how-it-works.md#the-watchdog));
 * xania's log, and a crash report for each crash;
 * for the area trial, `report.md`.
