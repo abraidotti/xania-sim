@@ -148,4 +148,16 @@ def lobby(args) -> TrialResult:
     return run("lobby", "Lobby: an empty reply at each login prompt", body, not args.no_record)
 
 
-TRIALS = {"smoke": smoke, "hunt": hunt, "churn": churn, "stage": stage, "level": level, "skill": skill, "area": area, "lobby": lobby}
+def weapon(args) -> TrialResult:
+    from xania_sim.trials.weapon import run_weapon
+
+    cases = [tuple(int(x) for x in c.split("@")) for c in args.cases] if args.cases else None
+
+    def body(result):
+        return asyncio.run(run_weapon(result, cases, args.rounds, args.cls, args.port))
+
+    return run("weapon", "Weapon: a weapon flag in a real fight, hit by hit", body, not args.no_record)
+
+
+TRIALS = {"smoke": smoke, "hunt": hunt, "churn": churn, "stage": stage, "level": level, "skill": skill, "area": area,
+          "lobby": lobby, "weapon": weapon}

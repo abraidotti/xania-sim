@@ -57,6 +57,11 @@ def main() -> None:
     lb.add_argument("--prompts", nargs="*", choices=["confirm_new", "sex", "alignment", "customize", "break_connect"],
                     help="only these prompts (default: all five)")
     lb.add_argument("--port", type=int, default=9170)
+    wp = sub.add_parser("weapon", help="a weapon flag in a real fight: every hit and hp change accounted for")
+    wp.add_argument("--cases", nargs="*", help="VNUM@LEVEL, e.g. 4100@20 (default: three vampiric weapons)")
+    wp.add_argument("--rounds", type=int, default=40, help="combat rounds per case (default 40)")
+    wp.add_argument("--cls", default="knight", choices=["mage", "cleric", "knight", "barbarian"])
+    wp.add_argument("--port", type=int, default=9100)
     sub.add_parser("report", help="print the latest runs and findings")
     st = sub.add_parser("status", help="each bot's progress: level, xp, kills, deaths, time played")
     st.add_argument("bot", nargs="?", help="show this bot's recent events and areas too")
