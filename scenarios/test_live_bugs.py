@@ -201,6 +201,80 @@ async def test_dark_vision_does_nothing_an_aggressive_bat_ignores_a_lightless_pl
     assert lit, "no bat attacked even with a lit lantern in 15 s, so the stage is wrong and the check proved nothing"
 
 
+# DamageMessages.cpp: the verbs only DamageType::Fire uses (none of them is a generic, DamageType::None, verb).
+FIRE_VERBS = {"touches", "hurts", "stings", "scalds", "blisters", "burns", "torches", "sizzles", "frazzles", "bakes",
+              "grills", "roasts", "sears", "chars", "BRANDS", "MELTS", "ENGULFS", "NUKES", "ATOMIZES"}
+
+
+# SkillTables.cpp: the damage noun each spell's messages use ("Your harm spell chars...", "Your spell hits...").
+NOUNS = {"harm": "harm spell", "cause critical": "spell"}
+
+
+async def _cast(bot: Bot, spell: str, mob: str) -> str:
+    """What one cast at ``mob`` did: "unaffected", or the verb of the hit (else the reply, for the failure)."""
+    noun = NOUNS[spell]
+    r = await bot.do(f"cast '{spell}' {mob}", timeout=20,
+                     expect=rf"unaffected by your {noun}|Your {noun} \W*\w+\W* the [\w ]*{mob}|lost your concentration|"
+                            r"aren't here|enough mana|You can't")
+    if re.search(rf"unaffected by your {noun}", r.text):
+        return "unaffected"
+    m = re.search(rf"Your {noun} \W*(\w+)\W* the [\w ]*{mob}", r.text)  # big hits: <<<  ERADICATES  >>>
+    return m.group(1) if m else f"?? {r.text.strip()}"
+
+
+async def test_harm_deals_fire_damage_not_harm(mud, names):
+    """magic.cpp spell_harm deals DamageType::Fire (abraidotti/xania#11): it was DAM_HARM until d165e77, and the rest
+    of the Harmful group (cause light/serious/critical) still deals Harm, which DamageTolerance.cpp checks against
+    the Magic tolerance. Immunity shows the type exactly ("$N is unaffected by your harm"), so a controlled pair:
+
+    - the snotling (13015, Flying Citadel, level 20): immune to Magic (its area flags), no Fire tolerance;
+    - the red bat (4151, Moria, level 7): immune to Fire, no Magic tolerance;
+
+    each cast at by a level-30 cleric with harm and cause critical at 100% (so no cast fails), in Temple Square.
+    cause critical is the control: as Harm damage it can't touch the snotling and does hurt the bat. harm, as Fire,
+    does the opposite, and its hit uses a fire verb (chars, roasts...). harm is cast first at each, since cause
+    critical kills the bat in one hit (as harm would, if it could touch it).
+
+    With #11's option A (restore DamageType::Harm), harm behaves like cause critical and this test fails: retire it.
+    Under option B (keep Fire on purpose) it keeps passing, and pins that choice."""
+    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port)
+    await bot.enter(Profile(cls="cleric"))
+    d = await Director.create(mud)
+    seen: dict[tuple[str, str], str] = {}
+    try:
+        await d.goto(3005)  # Temple Square: lit, not a safe room
+        await d.bring(bot.name)
+        await d.advance(bot.name, 30)
+        for spell in ("harm", "cause critical"):
+            await d.set_skill(bot.name, spell, 100)
+        for vnum, mob in ((13015, "snotling"), (4151, "bat")):  # one at a time, so each cast has one target
+            await d.restore(bot.name)
+            r = await d.do(f"load mob {vnum}", expect=r"Ok\.|No mob")
+            assert "Ok." in r, r
+            for spell in ("harm", "cause critical"):  # harm first: cause critical kills the bat
+                seen[mob, spell] = await _cast(bot, spell, mob)
+            await d.peace()
+            await d.do(f"purge {mob}", expect=None)
+    finally:
+        try:
+            await d.peace()
+            await d.restore(bot.name)
+        finally:
+            await d.close()
+    await bot.close()
+    assert not any(v.startswith("??") for v in seen.values()), f"a cast neither hit nor was shrugged off, so the " \
+                                                               f"check didn't run: {seen}"
+    # the control: Harm damage checks Magic
+    assert seen["snotling", "cause critical"] == "unaffected", seen
+    assert seen["bat", "cause critical"] != "unaffected", seen
+    # harm: Fire damage checks Fire
+    assert seen["snotling", "harm"] != "unaffected", (
+        f"harm can't hurt a Magic-immune mob any more: it deals Harm damage again (abraidotti/xania#11 option A), "
+        f"retire this test. {seen}")
+    assert seen["bat", "harm"] == "unaffected", seen
+    assert seen["snotling", "harm"] in FIRE_VERBS, seen
+
+
 async def test_cast_empty_quotes_crashes_debug_builds(mud, names, found):
     """magic.cpp do_cast -> lookup.cpp skill_lookup: `cast ''` anywhere. Like practice '' (abraidotti/xania#7), but
     any player can type it in any room: do_cast only checks that the line had arguments."""
