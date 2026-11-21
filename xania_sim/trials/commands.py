@@ -154,7 +154,7 @@ def weapon(args) -> TrialResult:
     cases = [tuple(int(x) for x in c.split("@")) for c in args.cases] if args.cases else None
 
     def body(result):
-        return asyncio.run(run_weapon(result, cases, args.rounds, args.cls, args.port))
+        return asyncio.run(run_weapon(result, cases, args.rounds, args.cls, args.port, args.expect))
 
     return run("weapon", "Weapon: a weapon flag in a real fight, hit by hit", body, not args.no_record)
 

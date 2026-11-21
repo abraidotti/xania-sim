@@ -8,9 +8,13 @@ hit points after each round. So each round can be accounted for exactly:
     change in the bot's hp  =  drained  -  damage taken
 
 and ``drained`` compared with what a model of the flag predicts from the bot's own hits. For Vampiric the models are
-the code as it is, ``(damage / 100) * 10`` per hit (fight.cpp damage()), and a plain 10% (``damage / 10``). A round
-that a regen tick lands in matches neither (the tick adds hit points, or clamps them back to max): those are counted
+the code before abraidotti/xania#9, ``(damage / 100) * 10`` per hit (fight.cpp damage()), a plain 10% (``damage / 10``),
+and #9's fix: 5% rounded to the nearest point, with a "$p drinks from $N." message on each hit that drains. A round
+that a regen tick lands in matches none (the tick adds hit points, or clamps them back to max): those are counted
 as ``unexplained`` rather than guessed at.
+
+Since #9 the wielder heals no further than max hit points, so the bot is restored and then given a much higher max
+(``mset hp``, which leaves current hit points alone): it has room to heal for the whole fight, and every drain shows.
 """
 
 from __future__ import annotations
@@ -39,7 +43,9 @@ DEFAULT_CASES = [(4100, 20), (10066, 65), (28021, 91)]
 MODELS = {
     "code today: (damage / 100) * 10": lambda d: (d // 100) * 10,
     "10% of the damage: damage / 10": lambda d: d // 10,
+    "5% of the damage, rounded (#9)": lambda d: (d * 5 + 50) // 100,
 }
+DRINKS = re.compile(r" drinks from ")  # fight.cpp damage(), to the wielder, on each hit that drains (since #9)
 
 
 def round_amounts(text: str) -> tuple[list[int], list[int]]:
@@ -80,6 +86,7 @@ class Case:
     matches: dict[str, int] = field(default_factory=dict)  # model -> rounds it explains exactly
     predicted: dict[str, int] = field(default_factory=dict)  # model -> drain it predicts over all rounds
     unexplained: int = 0
+    drink_messages: int = 0  # "$p drinks from $N." lines the bot saw
     examples: list[str] = field(default_factory=list)
     error: str = ""
 
@@ -89,7 +96,8 @@ class Case:
                 "rounds": self.rounds, "hits": n, "mean_hit": round(sum(self.hits) / n, 1) if n else None,
                 "max_hit": max(self.hits) if n else None, "hits_100_plus": sum(h >= 100 for h in self.hits),
                 "drained_seen": self.hp_gained, "drain_predicted": self.predicted,
-                "rounds_explained_by": self.matches, "rounds_unexplained": self.unexplained, "error": self.error}
+                "rounds_explained_by": self.matches, "rounds_unexplained": self.unexplained,
+                "drink_messages": self.drink_messages, "error": self.error}
 
 
 async def _setup(d: Director, bot: Bot, world, case: Case, cls: str) -> None:
@@ -121,6 +129,10 @@ async def _setup(d: Director, bot: Bot, world, case: Case, cls: str) -> None:
     await d.set_char("beggar", "hp", BAG_HP)
     await d.restore("beggar")
     await d.restore(bot.name)
+    # room to heal: a drain is capped at max hit points (#9), and the bot starts the fight at max
+    r = await d.set_char(bot.name, "hp", BAG_HP)
+    if "range" in r:
+        raise RuntimeError(f"couldn't raise the bot's max hit points: {r.strip()[-120:]}")
     await d.goto(3001)
 
 
@@ -139,6 +151,7 @@ async def _fight(bot: Bot, case: Case, rounds: int) -> None:
         if "is DEAD" in text:
             raise RuntimeError("the beggar died (its hit points weren't raised)")
         dealt, taken = round_amounts(text)
+        case.drink_messages += len(DRINKS.findall(text))
         if not dealt and not taken:
             last_hp = out.prompt.hp
             continue
@@ -162,7 +175,9 @@ async def _fight(bot: Bot, case: Case, rounds: int) -> None:
 
 
 async def run_weapon(result, cases: list[tuple[int, int]] | None = None, rounds: int = 40, cls: str = "knight",
-                     port: int = 9100) -> list:
+                     port: int = 9100, expect: str | None = None) -> list:
+    """expect: part of a model's name (e.g. "#9"); each case then passes only if that model explains the most
+    rounds, and, for #9's model, the bot saw a drain message whenever it drained."""
     from xania_explorer.areafile import flags as F
 
     world = W.load()
@@ -194,9 +209,12 @@ async def run_weapon(result, cases: list[tuple[int, int]] | None = None, rounds:
                 beat(f"{vnum}@{level}", "done", **{k: v for k, v in s.items() if k != "flags"})
                 best = max(case.matches, key=case.matches.get) if case.matches else None
                 ok = None if case.error or not case.rounds else True
+                if ok and expect:
+                    ok = bool(best) and expect in best and (
+                        "#9" not in expect or case.hp_gained == 0 or case.drink_messages > 0)
                 text = (f"{case.weapon} at {cls} {level}: {case.rounds} rounds, {len(case.hits)} hits "
                         f"(mean {s['mean_hit']}, max {s['max_hit']}, {s['hits_100_plus']} of 100+), drained "
-                        f"{case.hp_gained} HP; best model: {best}" if not case.error else
+                        f"{case.hp_gained} HP, {case.drink_messages} drain messages; best model: {best}" if not case.error else
                         f"{case.weapon} at {cls} {level}: {case.error}")
                 result.outcomes.append(Outcome("weapon", ok, text, case.examples, s))
                 result.measurements[f"{vnum}@{level}"] = s

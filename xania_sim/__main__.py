@@ -62,6 +62,7 @@ def main() -> None:
     wp.add_argument("--rounds", type=int, default=40, help="combat rounds per case (default 40)")
     wp.add_argument("--cls", default="knight", choices=["mage", "cleric", "knight", "barbarian"])
     wp.add_argument("--port", type=int, default=9100)
+    wp.add_argument("--expect", help="part of a model's name (e.g. '#9'): a case passes only if that model fits best")
     sub.add_parser("report", help="print the latest runs and findings")
     st = sub.add_parser("status", help="each bot's progress: level, xp, kills, deaths, time played")
     st.add_argument("bot", nargs="?", help="show this bot's recent events and areas too")
