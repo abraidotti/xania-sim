@@ -20,15 +20,25 @@ async def test_compare_counts_bonuses_and_names_the_stats_that_differ(mud, names
         await d.goto(3001)
         await d.bring(bot.name)
         for vnum, keyword in ITEMS.items():
-            r = await d.give_obj(bot.name, vnum, keyword)
-            assert "You give" in r, r
-        weapons = (await bot.do("compare pin elven", expect=r"look|compare")).text
-        rings = (await bot.do("compare protection pink", expect=r"would|compare|look")).text
+            if vnum != 16018:
+                r = await d.give_obj(bot.name, vnum, keyword)
+                assert "You give" in r, r
+        # The pin last: "pin" is also a prefix of "pink", and the newest item in the inventory is found first.
+        # It's invisible (extra flag invis), so a new character couldn't be given it, or see it to compare.
+        r = await d.do("load obj 16018", expect=r"Ok\.|No object")
+        assert "Ok." in r, r
+        await d.do("set obj pin extra -invis", expect=r"extra flags")
+        r = await d.do(f"give pin {bot.name}", expect=r"You give|can't")
+        assert "You give" in r, r
+        reply = r"looks (?:better|worse) than|look about the same|You can't compare|You do not have|would \w+ you"
+        weapons = (await bot.do("compare pin elven", expect=reply)).text
+        rings = (await bot.do("compare protection pink", expect=reply)).text
     finally:
         await d.close()
     await bot.quit()
 
     # a very sharp pin (4d5, +1 damroll, -3 str, -15 hp) against a long elven dagger (5d4): the damroll flips it
+    weapons, rings = weapons[-600:], rings[-600:]  # the replies are at the end; before them, the setup's output
     assert "A very sharp pin looks better than a long elven dagger." in weapons, weapons
     assert "A very sharp pin would make you weaker." in weapons, weapons
     assert "A very sharp pin would make you less healthy." in weapons, weapons
