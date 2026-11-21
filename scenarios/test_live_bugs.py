@@ -214,11 +214,13 @@ async def _cast(bot: Bot, spell: str, mob: str) -> str:
     """What one cast at ``mob`` did: "unaffected", or the verb of the hit (else the reply, for the failure)."""
     noun = NOUNS[spell]
     r = await bot.do(f"cast '{spell}' {mob}", timeout=20,
-                     expect=rf"unaffected by your {noun}|Your {noun} \W*\w+\W* the [\w ]*{mob}|lost your concentration|"
+                     expect=rf"unaffected by your {noun}|Your {noun} (?:does )?\W*\w+\W* (?:things to )?the [\w ]*{mob}|"
+                            r"lost your concentration|"
                             r"aren't here|enough mana|You can't")
     if re.search(rf"unaffected by your {noun}", r.text):
         return "unaffected"
-    m = re.search(rf"Your {noun} \W*(\w+)\W* the [\w ]*{mob}", r.text)  # big hits: <<<  ERADICATES  >>>
+    # big hits: "<<<  ERADICATES  >>>", and the biggest: "does UNSPEAKABLE things to"
+    m = re.search(rf"Your {noun} (?:does )?\W*(\w+)\W* (?:things to )?the [\w ]*{mob}", r.text)
     return m.group(1) if m else f"?? {r.text.strip()}"
 
 
@@ -232,8 +234,8 @@ async def test_harm_deals_fire_damage_not_harm(mud, names):
 
     each cast at by a level-30 cleric with harm and cause critical at 100% (so no cast fails), in Temple Square.
     cause critical is the control: as Harm damage it can't touch the snotling and does hurt the bat. harm, as Fire,
-    does the opposite, and its hit uses a fire verb (chars, roasts...). harm is cast first at each, since cause
-    critical kills the bat in one hit (as harm would, if it could touch it).
+    does the opposite, and its hit uses a fire verb (chars, roasts...). Each cast gets a freshly loaded mob, since
+    one hit can kill the bat.
 
     With #11's option A (restore DamageType::Harm), harm behaves like cause critical and this test fails: retire it.
     Under option B (keep Fire on purpose) it keeps passing, and pins that choice."""
@@ -247,14 +249,14 @@ async def test_harm_deals_fire_damage_not_harm(mud, names):
         await d.advance(bot.name, 30)
         for spell in ("harm", "cause critical"):
             await d.set_skill(bot.name, spell, 100)
-        for vnum, mob in ((13015, "snotling"), (4151, "bat")):  # one at a time, so each cast has one target
-            await d.restore(bot.name)
-            r = await d.do(f"load mob {vnum}", expect=r"Ok\.|No mob")
-            assert "Ok." in r, r
-            for spell in ("harm", "cause critical"):  # harm first: cause critical kills the bat
+        for vnum, mob in ((13015, "snotling"), (4151, "bat")):
+            for spell in ("harm", "cause critical"):  # a fresh mob for each, the only one in the room
+                await d.restore(bot.name)
+                r = await d.do(f"load mob {vnum}", expect=r"Ok\.|No mob")
+                assert "Ok." in r, r
                 seen[mob, spell] = await _cast(bot, spell, mob)
-            await d.peace()
-            await d.do(f"purge {mob}", expect=None)
+                await d.peace()
+                await d.do(f"purge {mob}", expect=None)
     finally:
         try:
             await d.peace()
