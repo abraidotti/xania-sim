@@ -52,7 +52,13 @@ class Director:
         r = await d.do("score", expect=r"Level: \S*\d+")  # act_info.cpp do_score: "Level: 100 (trust 100)"
         if not re.search(rf"Level: \S*{LEVEL}\b", r):
             raise DirectorError(f"{name} logged in but isn't level {LEVEL}:\n{r[:400]}")
-        await d.do("holylight", expect=r"[Hh]oly light")  # see everything, in the dark too
+        # see everything, in the dark too. holylight toggles (act_wiz.cpp do_holylight) and the player file keeps it,
+        # so a second login in the same session would turn it off: toggle until it's on.
+        for _ in range(2):
+            if "Holy light mode on" in await d.do("holylight", expect=r"Holy light mode (?:on|off)"):
+                break
+        else:
+            raise DirectorError(f"{name} couldn't turn holy light on")
         return d
 
     @staticmethod
