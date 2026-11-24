@@ -45,7 +45,7 @@ async def level(name: str, cls: str, race: str, goal: int, minutes: float, port:
     runs = Path("runs") / f"level-{time.strftime('%Y%m%d-%H%M%S')}"
 
     async def play(host, port):
-        bot = Bot(name, password, host=host, port=port, transcript_dir=runs)  # autoloot off: it crashes debug builds (do_get)
+        bot = Bot(name, password, host=host, port=port, transcript_dir=runs)  # autoloot off: players loot by hand
         await bot.enter(Profile(race=race, cls=cls))
         nav, rec, lev = _setup(bot, w, cls, race, lore, "level")
         rec.level = await lev.level()

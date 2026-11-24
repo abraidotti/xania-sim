@@ -1,7 +1,8 @@
 """Looting: looking in a corpse (or any container) and taking what's in it, one item at a time.
 
-Never ``get all``: with ``all`` do_get passes ``arg1[3]`` (act_obj.cpp:707), which aborts debug builds (xania
-issue #1). Replies (act_obj.cpp do_get / get_obj, 520-600, 630-700): "You get $p from $P." on success; "You can't
+One item at a time, not ``get all``, so each item's own reply says what happened to it. (``get all`` used to abort
+debug builds, reading ``arg1[3]`` of "all" in do_get: abraidotti/xania#1, fixed upstream in mattgodbolt/xania#307.)
+Replies (act_obj.cpp do_get / get_obj, 520-600, 630-700): "You get $p from $P." on success; "You can't
 take that.", "$d: you can't carry that many items.", "$d: you can't carry that much weight.", "Corpse looting is
 not permitted.", "<deity> forbids you from possessing more than one $p.", "You are not powerful enough to use it.",
 "I see no $T here.", "I see nothing like that in the $T." on failure. ``look in`` lists the contents under

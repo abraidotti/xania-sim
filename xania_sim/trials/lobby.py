@@ -1,7 +1,8 @@
 """The lobby trial: ``python -m xania_sim lobby``. A careless player pressing Enter at each login prompt.
 
-``MudImpl::nanny`` (MudImpl.cpp) reads ``argument[0]`` at several lobby prompts without checking the reply is
-empty, and an empty line does reach it (``Descriptor::pop_incomm`` passes blank lines on; ``nanny`` trims spaces to
+``MudImpl::nanny`` (MudImpl.cpp) read ``argument[0]`` at several lobby prompts without checking the reply was
+empty (abraidotti/xania#3, fixed upstream in mattgodbolt/xania#308; the trial now checks it stays fixed), and an
+empty line does reach it (``Descriptor::pop_incomm`` passes blank lines on; ``nanny`` trims spaces to
 nothing). On an empty ``std::string_view`` that index is out of range: a debug build aborts on the libstdc++
 assertion, taking the MUD down. The prompts: "Did I hear that right" (ConfirmNewName), male/female/other
 (GetNewSex), alignment (GetAlignment), "Customize" (DefaultChoice) and "connect anyway" (BreakConnect, for a

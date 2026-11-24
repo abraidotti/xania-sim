@@ -4,7 +4,8 @@ out, then save the crash report with the backtrace.
 The built-in activity is fighting a mob: each bot is a fresh level-1 character with the game's default settings
 (unlike other bots, hunters keep autoloot on), that walks to where the mob spawns, attacks it, and stays in the fight
 (dying, fleeing or winning, and autolooting) until it's over. That's how the
-``get all corpse`` crash (act_obj.cpp, ``arg1[3]`` past the end of "all") was reproduced.
+``get all corpse`` crash (act_obj.cpp, ``arg1[3]`` past the end of "all") was reproduced; it's fixed upstream
+(mattgodbolt/xania#307), and scenarios/test_live_fixed.py checks it stays fixed.
 """
 
 from __future__ import annotations

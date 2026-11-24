@@ -71,9 +71,9 @@ AUTOLOOT_REPLY = r"Autolooting removed|Automatic corpse looting set"
 
 
 class Bot:
-    """``autoloot``: bots turn autoloot off by default (None leaves it alone). With it on, killing a mob that carries
-    anything crashes debug builds of xania: autoloot runs ``get all corpse``, and do_get reads ``arg1[3]`` past the
-    end of "all" (src/act_obj.cpp:707)."""
+    """``autoloot``: bots turn autoloot off by default (None leaves it alone), so they loot by hand and see each item
+    they get (activities/loot.py). It was first turned off because autoloot crashed debug builds of xania (do_get
+    read ``arg1[3]`` past the end of "all", abraidotti/xania#1); that's fixed upstream (mattgodbolt/xania#307)."""
 
     def __init__(self, name: str, password: str, host: str = "127.0.0.1", port: int = 9000,
                  transcript_dir: Path | None = None, autoloot: bool | None = False):
