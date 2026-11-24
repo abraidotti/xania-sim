@@ -230,7 +230,7 @@ def _pct(x: float | None) -> float | None:
 
 class AreaPlayer(Leveller):
     """The careful levelling player, kept to one area: it hunts only mobs that spawn there, doesn't walk off to
-    practise, and loots by hand (autoloot stays off: it crashes debug builds, xania#1)."""
+    practise, and loots by hand (autoloot stays off), so it sees and records every item it takes."""
 
     toggles = {"autogold": True, "autosac": False}
     practise_skills = False

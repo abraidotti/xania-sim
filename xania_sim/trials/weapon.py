@@ -9,7 +9,8 @@ hit points after each round. So each round can be accounted for exactly:
 
 and ``drained`` compared with what a model of the flag predicts from the bot's own hits. For Vampiric the models are
 the code before abraidotti/xania#9, ``(damage / 100) * 10`` per hit (fight.cpp damage()), a plain 10% (``damage / 10``),
-and #9's fix: 5% rounded to the nearest point, with a "$p drinks from $N." message on each hit that drains. A round
+and #9's fix (merged upstream as mattgodbolt/xania#311, VampiricDrain.cpp): 5% rounded to the nearest point, with a
+"$p drinks from $N." message on each hit that drains. A round
 that a regen tick lands in matches none (the tick adds hit points, or clamps them back to max): those are counted
 as ``unexplained`` rather than guessed at.
 
@@ -41,7 +42,7 @@ AMOUNT = re.compile(r"\((\d+)\)\s*$")
 DEFAULT_CASES = [(4100, 20), (10066, 65), (28021, 91)]
 
 MODELS = {
-    "code today: (damage / 100) * 10": lambda d: (d // 100) * 10,
+    "code before #9: (damage / 100) * 10": lambda d: (d // 100) * 10,
     "10% of the damage: damage / 10": lambda d: d // 10,
     "5% of the damage, rounded (#9)": lambda d: (d * 5 + 50) // 100,
 }
