@@ -104,7 +104,9 @@ async def test_autoloot_of_a_corpse_with_something_in_it_survives(mud, names, fo
     await bot.set_autoloot(True)
     d = await Director.create(mud)
     try:
-        await d.goto(3005)  # Temple Square: not a safe room
+        # The Dump: not a safe room, and no-mob, so nothing wanders in. In Temple Square, Concordius and his eagle
+        # Aquila walk by, and Aquila killed the level 30 bot mid-fight with one claw (it failed full runs that way).
+        await d.goto(3030)
         await d.bring(bot.name)
         await d.do("load mob 3065", expect=r"Ok\.|No mob")  # a beggar (level 1, sentinel)
         r = await d.give_obj("beggar", 3021, "sword")  # a small sword (Midgaard)
