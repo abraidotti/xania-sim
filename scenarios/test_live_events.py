@@ -38,3 +38,34 @@ async def test_deaths_counts_a_slain_mob_in_its_area(mud):
     finally:
         await d.close()
     assert re.search(rf"^Midgaard +{players} +{mobs + 1}$", after, re.M), after
+
+
+TEMPLE = 3001  # where recall takes a new character
+PRACTICER = 3020  # practicer.prg: greet_prog 100, "You can practice your skills and spells with me, $N."
+LIMBO = 2
+GREET = "You can practice your skills and spells with me"
+
+
+async def test_recall_greets_and_an_immortals_goto_doesnt(mud, new_bot):
+    """abraidotti/xania#16 plan step 4: walking, portals, recall and magic greet; goto, transfer and logging in don't
+    (MProg::greets)."""
+    from xania_sim.core.session import Profile
+
+    bot = await new_bot(Profile())
+    d = await Director.create(mud)
+    try:
+        await d.goto(TEMPLE)
+        assert "Ok." in await d.do(f"load mob {PRACTICER}", expect=r"Ok\.|No mob")
+        await d.goto(LIMBO)
+        r = await d.do(f"goto {TEMPLE}", expect=r"\[Exits")
+        r += await d.do("look", expect=r"\[Exits")  # anything the greet program said arrives before the next prompt
+        assert GREET not in r, r
+        await d.goto(LIMBO)
+
+        r = await bot.do("recall", expect=rf"{GREET}, {bot.name}\.", timeout=8)
+        assert r.complete, r.text
+        assert r.text.find("[Exits:") < r.text.find(f"{GREET}, {bot.name}."), r.text
+    finally:
+        await d.goto(TEMPLE)
+        await d.do("purge guildmaster", expect=None)
+        await d.close()
