@@ -15,6 +15,8 @@ from xania_sim.record.rooms import Fingerprints
 from xania_sim.core.director import Director
 from xania_sim.core.session import Bot, Profile
 
+from conftest import RUNS  # every bot keeps a transcript, so a failure in a full run can be read afterwards
+
 
 async def _crashes_after(mud, bot, command) -> bool:
     try:
@@ -39,7 +41,7 @@ async def _regressed(mud, found, repro: str, what: str) -> str:
 async def test_get_all_in_an_empty_room_survives(mud, names, found):
     """act_obj.cpp do_get read ``arg1[3]`` of "all" when nothing was found (abraidotti/xania#1), aborting debug
     builds. Fixed upstream in mattgodbolt/xania#307."""
-    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port)
+    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port, transcript_dir=RUNS)
     await bot.enter(Profile())
     crashed = await _crashes_after(mud, bot, "get all")
     if crashed:
@@ -52,7 +54,7 @@ async def test_get_all_in_an_empty_room_survives(mud, names, found):
 async def test_practice_empty_quotes_at_a_trainer_survives(mud, names, found, world):
     """act_info.cpp do_practice -> lookup.cpp skill_lookup read ``name[0]`` of the empty view ``practice ''`` makes
     (abraidotti/xania#7). Fixed upstream in mattgodbolt/xania#310: an empty name matches nothing."""
-    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port)
+    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port, transcript_dir=RUNS)
     await bot.enter(Profile())
     nav = Navigator(bot, world, Fingerprints(world))
     await nav.locate()
@@ -83,7 +85,7 @@ async def test_practice_empty_quotes_at_a_trainer_survives(mud, names, found, wo
 async def test_cast_empty_quotes_survives(mud, names, found):
     """magic.cpp do_cast -> lookup.cpp skill_lookup: ``cast ''`` anywhere, like practice ''. Fixed upstream in
     mattgodbolt/xania#310."""
-    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port)
+    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port, transcript_dir=RUNS)
     await bot.enter(Profile())
     crashed = await _crashes_after(mud, bot, "cast ''")
     if crashed:
@@ -97,7 +99,7 @@ async def test_autoloot_of_a_corpse_with_something_in_it_survives(mud, names, fo
     """act_obj.cpp do_get (abraidotti/xania#1): autoloot runs ``get all corpse``, and for each object in the corpse
     the undroppable-item guard read ``arg1[3]`` of "all". Fixed upstream in mattgodbolt/xania#307. The director
     makes sure the mob carries something: a beggar given a small sword, killed by a level-30 bot with autoloot on."""
-    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port)
+    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port, transcript_dir=RUNS)
     await bot.enter(Profile())
     await bot.set_autoloot(True)
     d = await Director.create(mud)
@@ -173,7 +175,7 @@ async def test_harm_deals_harm_damage_like_the_rest_of_its_group(mud, names):
     each cast at by a level-30 cleric with harm and cause critical at 100% (so no cast fails), in Temple Square.
     cause critical is the control, and harm must now behave like it: it can't touch the snotling, does hurt the bat,
     and doesn't use a fire verb. Each cast gets a freshly loaded mob, since one hit can kill the bat."""
-    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port)
+    bot = Bot(names(), "simpass1", host=mud.host, port=mud.port, transcript_dir=RUNS)
     await bot.enter(Profile(cls="cleric"))
     d = await Director.create(mud)
     seen: dict[tuple[str, str], str] = {}
