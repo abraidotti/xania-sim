@@ -136,6 +136,8 @@ async def test_rand_and_a_chain_of_triggers(d, new_bot):
     bot = await new_bot(Profile())
     await load_in_arena(d, CRIER)
     await load_in_arena(d, CITYGUARD)
+    # Resting, so it doesn't wander off (it greets the mayor on his walk and leaves): it still sees and says.
+    await d.force("cityguard", "rest")
     await d.goto(LIMBO)
     await d.do(f"transfer {bot.name} {ARENA}", expect=r"Ok\.")
     await flush(bot)
